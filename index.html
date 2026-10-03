@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d0e32" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
+  <title>Facturador · Comprobantes de venta no fiscales · Digital Carmelo</title>
+  <style>
+    :root { --ink:#101828; --muted:#667085; --line:#e4e7ec; --soft:#f8fafc; --orange:#f97316; --orange-dark:#ea580c; --green:#079455; --red:#d92d20; --navy:#101828; --radius:18px; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:var(--ink); background:#f5f7fa; font-size:16px; }
+    button, input, select, textarea { font:inherit; }
+    button { cursor:pointer; border:0; }
+    .app-shell { min-height:100vh; display:flex; }
+    aside { width:248px; background:var(--navy); color:#fff; padding:22px 16px; display:flex; flex-direction:column; position:fixed; inset:0 auto 0 0; z-index:4; }
+    .brand { display:flex; align-items:center; gap:11px; padding:4px 10px 26px; }
+    .brand-mark { width:38px; height:38px; border-radius:12px; background:var(--orange); display:grid; place-items:center; font-size:20px; }
+    .brand strong { display:block; font-size:17px; letter-spacing:-.02em; }
+    .brand small { color:#98a2b3; font-size:12px; }
+    .nav { display:grid; gap:6px; }
+    .nav button { text-align:left; background:transparent; color:#b8c0cc; padding:12px 13px; border-radius:11px; display:flex; gap:11px; align-items:center; font-weight:600; }
+    .nav button:hover, .nav button.active { background:#1d2939; color:#fff; }
+    .nav button.active { box-shadow:inset 3px 0 var(--orange); }
+    aside .aside-tip { margin-top:auto; background:#1d2939; border:1px solid #344054; border-radius:14px; padding:13px; color:#d0d5dd; font-size:13px; line-height:1.45; }
+    main { margin-left:248px; width:calc(100% - 248px); min-width:0; }
+    .topbar { background:#fff; border-bottom:1px solid var(--line); height:72px; padding:0 34px; display:flex; align-items:center; justify-content:space-between; gap:18px; position:sticky; top:0; z-index:3; }
+    .topbar h1 { font-size:21px; margin:0; letter-spacing:-.03em; }
+    .topbar p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+    .top-actions { display:flex; gap:10px; align-items:center; }
+    .avatar { width:38px; height:38px; border-radius:50%; background:#fff1e9; color:var(--orange-dark); display:grid; place-items:center; font-weight:800; overflow:hidden; } .avatar img { width:100%; height:100%; object-fit:contain; }
+    .content { padding:30px 34px 20px; max-width:1400px; margin:auto; }
+    .view { display:none; animation:fade .18s ease; } .view.active { display:block; } @keyframes fade { from{opacity:.4;transform:translateY(3px)} to{opacity:1;transform:none} }
+    .welcome { display:flex; justify-content:space-between; align-items:end; margin-bottom:23px; gap:20px; } .welcome h2 { margin:0 0 7px; font-size:28px; letter-spacing:-.04em; } .welcome p { margin:0; color:var(--muted); }
+    .btn { border-radius:10px; padding:11px 15px; font-weight:750; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:.15s; }
+    .btn.primary { background:var(--orange); color:#fff; box-shadow:0 2px 5px #f9731633; } .btn.primary:hover { background:var(--orange-dark); transform:translateY(-1px); }
+    .btn.secondary { background:#fff; border:1px solid var(--line); color:var(--ink); } .btn.secondary:hover { background:var(--soft); }
+    .btn.danger { color:var(--red); background:#fff1f0; } .btn.ghost { background:transparent; color:var(--muted); padding:8px; } .btn.small { padding:8px 11px; font-size:14px; }
+    .stats { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-bottom:22px; }
+    .stat, .card { background:#fff; border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 2px 7px #10182808; }
+    .stat { padding:20px; display:flex; justify-content:space-between; align-items:start; } .stat span { display:block; color:var(--muted); font-size:14px; margin-bottom:12px; } .stat strong { font-size:28px; letter-spacing:-.04em; } .stat-icon { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; font-size:20px; background:#fff1e9; }
+    .grid-2 { display:grid; grid-template-columns:1.3fr .7fr; gap:18px; align-items:start; } .card { padding:22px; } .card h3 { margin:0 0 5px; font-size:17px; letter-spacing:-.02em; } .muted { color:var(--muted); font-size:14px; }
+    .card-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; } .card-head h3 { margin:0; }
+    .table-wrap { overflow:auto; } table { width:100%; border-collapse:collapse; min-width:560px; } th, td { padding:13px 10px; border-bottom:1px solid #f0f2f5; text-align:left; font-size:14px; } th { color:var(--muted); font-weight:650; font-size:12px; text-transform:uppercase; letter-spacing:.04em; } td:last-child, th:last-child { text-align:right; }
+    .empty { padding:30px 12px; color:var(--muted); text-align:center; } .badge { display:inline-flex; align-items:center; gap:5px; border-radius:99px; padding:5px 9px; font-size:12px; font-weight:750; } .badge.paid { background:#ecfdf3; color:#067647; } .badge.pending { background:#fff4e8; color:#b54708; } .badge.partial { background:#eff8ff; color:#175cd3; }
+    .form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; } .form-grid.three { grid-template-columns:repeat(3,1fr); } .field { display:grid; gap:7px; } .field.full { grid-column:1/-1; } label { font-weight:700; font-size:14px; } input, select, textarea { width:100%; border:1px solid #d0d5dd; border-radius:10px; padding:11px 12px; color:var(--ink); background:#fff; outline:none; } input:focus, select:focus, textarea:focus { border-color:var(--orange); box-shadow:0 0 0 3px #f9731622; } input[type=number] { min-width:0; } textarea { min-height:80px; resize:vertical; }
+    .sale-layout { display:grid; grid-template-columns:minmax(0,1.3fr) 360px; gap:18px; align-items:start; } .section-title { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); padding-bottom:13px; margin:22px 0 17px; } .section-title:first-child { margin-top:0; } .section-title h3 { margin:0; font-size:16px; }
+    .item-row { display:grid; grid-template-columns:1.4fr 1.2fr 80px 130px 120px 36px; gap:8px; align-items:end; padding:11px 0; border-bottom:1px solid #f0f2f5; } .item-row .field label { display:none; } .item-row .item-total { font-weight:750; padding-bottom:11px; text-align:right; } .icon-btn { background:#fff1f0; color:var(--red); border-radius:9px; width:32px; height:34px; align-self:end; margin-bottom:2px; }
+    .summary { position:sticky; top:93px; } .summary .total { font-size:34px; font-weight:850; letter-spacing:-.05em; margin:10px 0 18px; } .sum-line { display:flex; justify-content:space-between; padding:9px 0; color:var(--muted); font-size:14px; } .sum-line.total-line { border-top:1px solid var(--line); color:var(--ink); font-weight:800; font-size:16px; margin-top:5px; } .notice { padding:11px 12px; background:#fff8eb; border:1px solid #fedf89; border-radius:11px; color:#93370d; font-size:13px; line-height:1.4; }
+    .search-row { display:flex; gap:10px; margin-bottom:15px; } .search-row input { max-width:340px; } .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; } .toolbar select, .toolbar input { width:auto; }
+    .list-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; } .mini-card { border:1px solid var(--line); border-radius:14px; padding:16px; background:#fff; } .mini-card h4 { margin:0 0 5px; } .mini-card p { margin:4px 0; color:var(--muted); font-size:14px; } .mini-card .mini-actions { display:flex; justify-content:flex-end; gap:5px; margin-top:12px; }
+    .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; } .logo-preview { width:82px; height:82px; border:1px dashed #d0d5dd; border-radius:14px; display:grid; place-items:center; color:var(--muted); overflow:hidden; background:var(--soft); } .logo-preview img { width:100%; height:100%; object-fit:contain; }
+    .modal-backdrop { display:none; position:fixed; inset:0; background:#10182888; z-index:10; place-items:center; padding:18px; } .modal-backdrop.show { display:grid; } .modal { background:#fff; border-radius:18px; padding:23px; max-width:760px; width:100%; max-height:90vh; overflow:auto; } .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; } .modal-head h3 { margin:0; } .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+    .receipt { max-width:720px; margin:auto; } .receipt-head { display:flex; justify-content:space-between; gap:20px; border-bottom:2px solid var(--ink); padding-bottom:18px; } .receipt-brand { display:flex; gap:12px; align-items:center; } .receipt-brand img { max-width:62px; max-height:62px; } .receipt-title { text-align:right; } .receipt-title h2 { margin:0; font-size:20px; } .receipt-title p { margin:5px 0 0; color:var(--muted); font-size:13px; } .receipt-meta { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0; } .receipt-meta div { background:var(--soft); padding:11px; border-radius:10px; } .receipt-meta small { display:block; color:var(--muted); font-size:12px; margin-bottom:4px; } .receipt-meta strong { font-size:14px; } .receipt-total { display:flex; justify-content:flex-end; margin-top:14px; font-size:23px; font-weight:850; } .receipt-foot { color:var(--muted); font-size:12px; margin-top:25px; border-top:1px solid var(--line); padding-top:13px; }
+    footer { text-align:center; color:#98a2b3; font-size:12px; padding:28px 10px 18px; } footer .suite-footer-label { display:block; color:#d3ac49; font-weight:800; letter-spacing:.14em; text-transform:uppercase; } footer .suite-footer-name { display:block; margin-top:4px; font-weight:700; color:#fcca55; } footer a { color:inherit; text-decoration:none; } footer a:hover { text-decoration:underline; }
+    .toast { position:fixed; bottom:20px; right:20px; background:var(--navy); color:#fff; padding:12px 16px; border-radius:11px; opacity:0; transform:translateY(8px); pointer-events:none; transition:.2s; z-index:20; } .toast.show { opacity:1; transform:none; }
+    @media(max-width:980px){ aside{width:74px;padding:16px 10px;} aside .brand > div:last-child, aside .aside-tip, .nav span{display:none;} .brand{padding:4px 8px 24px;justify-content:center;} .nav button{justify-content:center;padding:12px 8px;font-size:20px;} main{margin-left:74px;width:calc(100% - 74px);} .content{padding:24px 20px;} .sale-layout{grid-template-columns:1fr;} .summary{position:static;} }
+    @media(max-width:680px){ aside{position:sticky;top:0;inset:auto;width:100%;height:auto;padding:8px 10px;background:var(--navy);z-index:5;} aside .brand,aside .aside-tip{display:none;} .nav{display:flex;overflow-x:auto;gap:5px;scrollbar-width:none;} .nav::-webkit-scrollbar{display:none;} .nav button{flex:0 0 auto;justify-content:center;padding:9px 10px;color:#fff;background:transparent;font-size:13px;gap:5px;white-space:nowrap;} .nav button span:first-child{font-size:17px;} .nav button.active{background:var(--orange);box-shadow:none;} main{margin-left:0;width:100%;} .topbar{padding:0 17px;height:66px;} .topbar p{display:none;} .topbar h1{font-size:18px;} .content{padding:20px 14px;} .welcome{align-items:stretch; flex-direction:column; gap:15px;} .welcome h2{font-size:24px;} .stats{grid-template-columns:1fr; gap:10px;} .stat{padding:16px;} .stat strong{font-size:24px;} .grid-2,.settings-grid{grid-template-columns:1fr;} .form-grid,.form-grid.three{grid-template-columns:1fr;} .field.full{grid-column:auto;} .item-row{grid-template-columns:minmax(0,1fr) 86px 112px 36px; gap:8px;} .item-row .field:first-child{grid-column:1/-1;} .item-row .field:nth-child(2){grid-column:1/-1;} .item-row .item-total{grid-column:3;grid-row:3;padding-bottom:11px;} .item-row .icon-btn{grid-column:4;grid-row:3;} .receipt-head{flex-direction:column;} .receipt-title{text-align:left;} .receipt-meta{grid-template-columns:1fr 1fr;} .search-row{flex-direction:column;} .search-row input{max-width:none;} }
+    @media(max-width:680px){ .app-shell{display:block;} aside{display:block!important;background:var(--orange);padding:6px 7px!important;border-bottom:1px solid #c2410c;box-shadow:0 2px 8px #10182822;} aside .brand,aside .aside-tip{display:none!important;} aside .nav{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;overflow:visible!important;} aside .nav button{display:flex!important;min-width:0;width:100%;padding:8px 4px!important;border-radius:8px;color:#fff!important;background:transparent!important;box-shadow:none!important;font-size:12px!important;line-height:1.1;font-weight:800;gap:3px;} aside .nav button span,aside .nav button span:first-child,aside .nav button span:last-child{display:inline!important;color:inherit!important;} aside .nav button span:first-child{font-size:15px!important;} aside .nav button.active{background:var(--navy)!important;color:#fff!important;box-shadow:0 1px 3px #10182844!important;} }
+    @media print { body{background:#fff;} aside,.topbar,.no-print,footer{display:none!important;} main{margin:0;width:100%;} .content{padding:0;} .view{display:none!important;} #receipt-view{display:block!important;} #receipt-view .card{border:0;box-shadow:none;padding:0;} .receipt{max-width:none;} }
+  
+    /* Suite Potenciadoras · piel visual compartida */
+    :root { --ink:#0d0e32; --muted:#666b80; --line:#dddfea; --soft:#f5f6fb; --orange:#d3ac49; --orange-dark:#a8812a; --navy:#0d0e32; }
+    body { font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; background:#f5f6fb; }
+    aside { background:#0d0e32; }
+    .brand-mark { background:#d3ac49; color:#0d0e32; }
+    .nav button:hover,.nav button.active { background:#1a1f38; }
+    .nav button.active { box-shadow:inset 3px 0 #d3ac49; }
+    .topbar { border-bottom:3px solid #d3ac49; }
+    .topbar h1 { font-family:"Cinzel",Georgia,"Times New Roman",serif; }
+    .btn.primary { background:linear-gradient(135deg,#f7dc8a 0%,#d3ac49 45%,#a8812a 100%); color:#0d0e32; box-shadow:0 7px 22px rgba(13,14,50,.16); }
+    .btn.primary:hover { background:#a8812a; }
+    .avatar,.stat-icon { background:#f8efd5; color:#a8812a; }
+    aside .aside-tip { background:#1a1f38; border-color:#34405f; }
+    footer { margin:40px -34px 0; background:#0d0e32; color:rgba(211,172,73,.78); display:flex; align-items:center; justify-content:center; gap:.6rem; flex-wrap:wrap; padding:12px 20px; }
+    footer .suite-footer-label { display:inline; color:rgba(211,172,73,.85); }
+    footer .suite-footer-name { display:inline; margin:0; color:#fcca55; }
+    @media(max-width:680px){ footer{margin:40px -14px 0;} aside{background:#0d0e32!important;border-bottom-color:#d3ac49!important;} aside .nav button.active{background:#d3ac49!important;color:#0d0e32!important;} }
+
+  </style>
+<style>
+.suite-promo{position:fixed;right:22px;bottom:22px;z-index:9999;width:min(330px,calc(100vw - 32px));padding:15px 17px 16px;border:1px solid rgba(211,172,73,.55);border-radius:18px;background:linear-gradient(145deg,#0d0e32,#1a1f38);color:#fff;box-shadow:0 18px 45px rgba(13,14,50,.28);font-family:Inter,ui-sans-serif,system-ui,sans-serif;animation:suitePromoIn .45s ease both}
+.suite-promo.is-hiding{animation:suitePromoOut .35s ease both}
+.suite-promo__close{position:absolute;right:9px;top:7px;width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:#d9d9e5;font-size:18px;line-height:1;cursor:pointer}
+.suite-promo__eyebrow{margin:0 28px 5px 0;color:#fcca55;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.suite-promo__text{margin:0 0 11px;color:#fff;font-size:14px;line-height:1.35;font-weight:650}
+.suite-promo__cta{display:inline-flex;align-items:center;justify-content:center;padding:9px 13px;border-radius:10px;background:linear-gradient(135deg,#f7dc8a,#d3ac49);color:#0d0e32;text-decoration:none;font-size:12px;font-weight:800}
+.suite-promo__cta:hover{filter:brightness(1.06)}
+@keyframes suitePromoIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes suitePromoOut{to{opacity:0;transform:translateY(14px) scale(.97)}}
+@media(max-width:600px){.suite-promo{right:12px;bottom:12px;width:min(310px,calc(100vw - 24px))}}
+@media(prefers-reduced-motion:reduce){.suite-promo{animation:none}}
+</style>
+
+<style>
+/* Cabecera común de la Suite Potenciadora */
+.brand-logo{width:46px;height:46px;object-fit:contain;border-radius:12px;background:#0d0e32;flex:0 0 auto}
+.welcome.suite-hero{position:relative;overflow:hidden;isolation:isolate;background:#0d0e32;color:#fff;border-radius:20px;padding:26px 28px;border:0;box-shadow:0 18px 50px rgba(13,14,50,.18)}
+.welcome.suite-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 12% 50%,rgba(211,172,73,.20),transparent 55%),radial-gradient(ellipse at 100% 0%,rgba(252,202,85,.12),transparent 45%)}
+.welcome.suite-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(135deg,#f7dc8a 0%,#d3ac49 45%,#a8812a 100%)}
+.suite-hero__eyebrow{margin:0 0 8px!important;color:#d3ac49!important;font-size:11px!important;font-weight:700;letter-spacing:.24em;text-transform:uppercase}
+.welcome.suite-hero h2{margin:0;font-family:"Cinzel",Georgia,serif;font-weight:600;letter-spacing:.02em;background:linear-gradient(180deg,#fff3cf 0%,#fcca55 45%,#c99a2e 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.welcome.suite-hero p:not(.suite-hero__eyebrow){color:rgba(255,255,255,.78)}
+@media (max-width:720px){.welcome.suite-hero{padding:20px 18px;border-radius:16px}.suite-hero__eyebrow{letter-spacing:.14em;font-size:10px!important}}
+@media print{.welcome.suite-hero{display:none}}
+</style>
+<style>
+/* Pie común de la suite: autoría y derechos */
+.suite-by{font-weight:600;font-style:italic;color:rgba(252,202,85,.8);margin-left:.35em;white-space:nowrap}
+.suite-legal{flex-basis:100%;display:block;width:100%;text-align:center;font-size:.64rem;line-height:1.45;letter-spacing:.02em;text-transform:none;font-weight:500;color:rgba(255,255,255,.45);margin-top:.15rem}
+footer .suite-legal{color:#98a2b3}</style>
+<style>
+/* Módulo Stock + Códigos de barras */
+.stats.four{grid-template-columns:repeat(4,1fr)}
+.stat.is-warn .stat-icon{background:#fff4e8;color:#b54708}.stat.is-bad .stat-icon{background:#fff1f0;color:#d92d20}
+.badge.sk-ok{background:#ecfdf3;color:#067647}.badge.sk-low{background:#fff4e8;color:#b54708}.badge.sk-out{background:#fff1f0;color:#b42318}.badge.sk-off{background:#f2f4f7;color:#667085}
+.code-chip{display:inline-block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;background:#f2f4f7;border-radius:6px;padding:2px 7px;color:#344054}
+.scan-box{display:flex;gap:8px;align-items:center;padding:8px;border:2px dashed #d3ac49;border-radius:14px;background:#fffbf0}
+.scan-box input{flex:1;min-width:0;border:0;background:transparent;box-shadow:none!important;font-size:16px;padding:10px 6px}
+.scan-ic{font-size:22px;color:#a8812a;padding-left:6px}
+.sale-scan{margin-bottom:12px}
+.stock-hint{display:block;font-size:12px;color:var(--muted);margin-top:3px}.stock-hint.is-out{color:var(--red);font-weight:700}
+.code-input{display:flex;gap:8px}.code-input input{flex:1;min-width:0}
+.code-preview{min-height:10px;display:flex;justify-content:center}.code-preview svg{max-height:70px;max-width:100%}
+.check-row{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;cursor:pointer}.check-row input{width:18px;height:18px;accent-color:#0d0e32}
+.seg-row{display:flex;flex-wrap:wrap;gap:6px}.seg-row button{padding:9px 13px;border-radius:999px;border:1.5px solid var(--line);background:#fff;font-weight:750;font-size:14px;color:var(--muted)}.seg-row button.on{background:#0d0e32;border-color:#0d0e32;color:#fff}
+.stock-table td:last-child{white-space:nowrap}.neg{color:var(--red)}.pos{color:#067647}
+.stock-alert{margin-bottom:22px;border-color:#fedf89;background:#fffcf5}
+.alert-chips{display:flex;flex-wrap:wrap;gap:8px}.alert-chip{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-weight:650;font-size:14px}
+.label-list{display:grid;gap:6px;max-height:48vh;overflow:auto;margin:10px 0}.label-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 10px;border:1px solid var(--line);border-radius:12px}.label-item input{width:84px;text-align:center}
+#labels-print{display:none}
+.lbl-sheet{position:relative;width:210mm;height:297mm;background:#fff;page:etiquetas;break-after:page;page-break-after:always}
+.lbl-sheet:last-child{break-after:auto;page-break-after:auto}
+.lbl{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5mm;padding:1.5mm;text-align:center;outline:.2mm dashed #c3c7d4;outline-offset:-.1mm;overflow:hidden;font-family:Inter,Arial,sans-serif;color:#111}
+.lbl-biz{font-size:2.1mm;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.lbl-name{font-size:3mm;font-weight:700;line-height:1.1;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.lbl-price{font-size:4mm;font-weight:850;line-height:1}
+.lbl-bar{width:54mm;height:14mm;display:flex;justify-content:center}.lbl-bar svg{width:100%;height:100%}
+@page etiquetas{size:A4;margin:0}
+@media print{body.print-labels #receipt-view{display:none!important}body.print-labels .view,body.print-labels .modal-backdrop,body.print-labels .suite-promo,body.print-labels .toast{display:none!important}body.print-labels .app-shell{display:none!important}body.print-labels #labels-print{display:block!important}body.print-labels{padding:0!important;background:#fff}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+@media(max-width:980px){.stats.four{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){aside .nav{grid-template-columns:repeat(4,minmax(0,1fr))!important}.stats.four{grid-template-columns:1fr 1fr}.scan-box{flex-wrap:wrap}.scan-box input{flex-basis:100%}.stock-table td:last-child .btn{padding:6px}}
+</style>
+<meta name="description" content="Ventas, clientes, stock y comprobantes de venta internos (no fiscales: no reemplazan la factura de ARCA).">
+<link rel="icon" href="img/dc-mark.png" type="image/png">
+<link rel="apple-touch-icon" href="img/dc-mark.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Facturador · Comprobantes de venta no fiscales">
+<meta property="og:url" content="https://facturador.digitalcarmelo.com/">
+<meta property="og:description" content="Ventas, clientes, stock y comprobantes de venta internos (no fiscales: no reemplazan la factura de ARCA).">
+<meta property="og:image" content="https://facturador.digitalcarmelo.com/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://facturador.digitalcarmelo.com/img/og.jpg">
+</head>
+<body class="dc-auth-pending">
+<div id="dc-auth-root"></div>
+<div class="dc-strip" aria-label="Digital Carmelo · Suite Potenciadora"><img src="img/dc-mark.png" alt="" width="18" height="18"><span>Digital Carmelo · Suite Potenciadora</span></div>
+<div class="app-shell">
+  <aside>
+    <div class="brand"><span class="app-ic" aria-hidden="true">▤</span><div><strong>Facturador</strong><small>Comprobantes y ventas</small></div></div>
+    <nav class="nav">
+      <button class="active" data-view="dashboard"><span>⌂</span><span>Inicio</span></button>
+      <button data-view="new-sale"><span>＋</span><span>Nueva venta</span></button>
+      <button data-view="history"><span>▤</span><span>Historial</span></button>
+      <button data-view="products"><span>▦</span><span>Productos</span></button>
+      <button data-view="clients"><span>♙</span><span>Clientes</span></button>
+      <button data-view="settings"><span>⚙</span><span>Configuración</span></button>
+    </nav>
+    <div class="aside-tip">Creá un comprobante en segundos y mantené tus ventas ordenadas.</div>
+  </aside>
+  <main>
+    <header class="topbar"><div class="client-brand"><div class="avatar client-logo" id="business-avatar">DC</div><div><b id="biz-name">Mi negocio</b><span class="crumb">Facturador · <span id="page-title">Inicio</span></span></div></div><div class="top-actions"><button class="btn primary" onclick="showView('new-sale')">＋ Nueva venta</button></div></header>
+    <div class="content">
+      <section id="dashboard-view" class="view active">
+        <div class="welcome suite-hero"><div><h2>Hola, <span id="business-greeting">tu negocio</span> 👋</h2><p>Registrá tu venta, enviásela a tu cliente y guardá el historial.</p><p class="muted" style="font-size:13px;margin-top:6px">Los comprobantes son internos y <strong>no fiscales</strong>: no reemplazan la factura electrónica de ARCA.</p></div><button class="btn primary" onclick="showView('new-sale')">＋ Crear comprobante</button></div>
+        <div class="stats"><div class="stat"><div><span>Ventas de hoy</span><strong id="today-total">$0</strong></div><div class="stat-icon">↗</div></div><div class="stat"><div><span>Operaciones de hoy</span><strong id="today-count">0</strong></div><div class="stat-icon">▤</div></div><div class="stat"><div><span>Ventas del mes</span><strong id="month-total">$0</strong></div><div class="stat-icon">◒</div></div></div>
+        <div class="grid-2"><div class="card"><div class="card-head"><div><h3>Últimas operaciones</h3><div class="muted">Tus ventas más recientes</div></div><button class="btn secondary small" onclick="showView('history')">Ver historial</button></div><div id="recent-sales"></div></div><div class="card"><div class="card-head"><div><h3>Accesos rápidos</h3><div class="muted">Lo que más usás</div></div></div><div style="display:grid;gap:10px"><button class="btn secondary" onclick="showView('products')">▦ Administrar productos</button><button class="btn secondary" onclick="showView('clients')">♙ Ver clientes</button><button class="btn secondary" onclick="showView('settings')">⚙ Configurar negocio</button></div></div></div>
+      </section>
+      <section id="new-sale-view" class="view"><div class="welcome suite-hero"><div><h2>Nueva venta</h2><p>Completá los datos y generá tu comprobante no fiscal.</p></div></div><div class="sale-layout"><div class="card"><div class="section-title"><h3>1. Datos del cliente</h3><button class="btn secondary small" onclick="openClientModal()">＋ Guardar cliente</button></div><div class="form-grid"><div class="field"><label>Seleccionar cliente</label><select id="sale-client-select"><option value="">Cliente ocasional</option></select></div><div class="field"><label>Nombre</label><input id="sale-client-name" placeholder="Nombre del cliente" /></div><div class="field"><label>Teléfono / WhatsApp</label><input id="sale-client-phone" placeholder="Ej. 11 5555 5555" /></div><div class="field"><label>Email (opcional)</label><input id="sale-client-email" type="email" placeholder="cliente@email.com" /></div><div class="field full"><label>DNI / CUIT (opcional)</label><input id="sale-client-tax" placeholder="Documento o CUIT" /></div></div><div class="section-title"><h3>2. Productos o servicios</h3><button class="btn secondary small" onclick="addItem()">＋ Agregar ítem</button></div><div id="items-list"></div><div class="section-title"><h3>3. Ajustes</h3></div><div class="form-grid three"><div class="field"><label>Descuento</label><input id="discount" type="number" min="0" step="0.01" value="0" oninput="updateSummary()" /></div><div class="field"><label>Tipo de descuento</label><select id="discount-type" onchange="updateSummary()"><option value="percent">Porcentaje (%)</option><option value="amount">Monto ($)</option></select></div><div class="field"><label>Recargo ($)</label><input id="surcharge" type="number" min="0" step="0.01" value="0" oninput="updateSummary()" /></div></div><div class="section-title"><h3>4. Pago</h3></div><div class="form-grid"><div class="field"><label>Forma de pago</label><select id="payment-method"><option>Efectivo</option><option>Transferencia</option><option>Mercado Pago</option><option>Tarjeta</option><option>Otro</option></select></div><div class="field"><label>Estado</label><select id="payment-status" onchange="togglePartial()"><option value="paid">Pagado</option><option value="pending">Pendiente</option><option value="partial">Pago parcial</option></select></div><div class="field" id="partial-field" style="display:none"><label>¿Cuánto abonó?</label><input id="partial-paid" type="number" min="0" step="0.01" value="0" oninput="updateSummary()" /></div><div class="field full"><label>Nota sobre el pago (opcional)</label><input id="payment-note" placeholder="Ej. entrega el viernes" /></div></div><div class="field" style="margin-top:16px"><label>Observaciones (opcional)</label><textarea id="sale-notes" placeholder="Una nota que quieras incluir en el comprobante..."></textarea></div></div><div class="card summary"><div class="card-head"><div><h3>Resumen</h3><div class="muted">Antes de confirmar, revisá el total.</div></div></div><div id="summary-lines"></div><div class="total" id="summary-total">$0</div><div id="balance-box"></div><div class="notice">Este comprobante es un recibo de venta interno y no es válido como factura fiscal ni se conecta con ARCA.</div><button class="btn primary" style="width:100%;margin-top:16px" onclick="completeSale()">✓ Confirmar venta</button></div></div></section>
+      <section id="history-view" class="view"><div class="welcome suite-hero"><div><h2>Historial</h2><p>Encontrá y volvé a abrir tus comprobantes.</p></div></div><div class="card"><div class="toolbar" style="margin-bottom:17px"><input id="history-search" placeholder="Buscar cliente o comprobante..." oninput="renderHistory()" /><select id="history-status" onchange="renderHistory()"><option value="">Todos los estados</option><option value="paid">Pagado</option><option value="pending">Pendiente</option><option value="partial">Pago parcial</option></select><input id="history-date" type="date" onchange="renderHistory()" /><button class="btn secondary small" onclick="clearHistoryFilters()">Limpiar filtros</button></div><div id="history-table"></div></div></section>
+      <section id="products-view" class="view"><div class="welcome suite-hero"><div><h2>Productos</h2><p>Guardá tus productos y servicios para cargar ventas más rápido.</p></div><button class="btn primary" onclick="openProductModal()">＋ Nuevo producto</button></div><div class="card"><div id="products-list" class="list-grid"></div></div></section>
+      <section id="clients-view" class="view"><div class="welcome suite-hero"><div><h2>Clientes</h2><p>Tu base de clientes, siempre a mano.</p></div><button class="btn primary" onclick="openClientModal()">＋ Nuevo cliente</button></div><div class="card"><div id="clients-list" class="list-grid"></div></div></section>
+      <section id="settings-view" class="view"><div class="welcome suite-hero"><div><h2>Configuración</h2><p>Personalizá los datos que aparecen en tus comprobantes.</p></div></div><div class="settings-grid"><div class="card"><div class="card-head"><div><h3>Datos del negocio</h3><div class="muted">Se guardan en este dispositivo.</div></div></div><div class="form-grid"><div class="field full"><label>Nombre del negocio</label><input id="set-name" /></div><div class="field"><label>WhatsApp / teléfono</label><input id="set-phone" /></div><div class="field"><label>Email</label><input id="set-email" type="email" /></div><div class="field full"><label>Dirección</label><input id="set-address" /></div><div class="field full"><label>CUIT (opcional)</label><input id="set-tax" /></div><div class="field full"><label>Texto al pie del comprobante</label><textarea id="set-footer" placeholder="Gracias por tu compra"></textarea></div></div><button class="btn primary" style="margin-top:17px" onclick="saveSettings()">Guardar configuración</button></div><div class="card"><div class="card-head"><div><h3>Logo</h3><div class="muted">Se conserva localmente en este dispositivo.</div></div></div><div style="display:flex;gap:15px;align-items:center"><div class="logo-preview" id="logo-preview">▣</div><div><input type="file" id="logo-file" accept="image/*" onchange="loadLogo(event)" /><div class="muted" style="margin-top:8px">PNG o JPG. Recomendado: fondo transparente.</div></div></div><hr style="border:0;border-top:1px solid var(--line);margin:24px 0"><h3>Datos de prueba</h3><p class="muted">¿Querés empezar de cero? Esto borra productos, clientes y ventas guardados.</p><button class="btn danger small" onclick="resetDemo()">Borrar todos los datos</button></div></div></section>
+      <section id="receipt-view" class="view"><div class="welcome suite-hero no-print"><div><h2>Comprobante generado</h2><p>Podés imprimirlo o compartirlo con tu cliente.</p></div><div class="toolbar"><button class="btn secondary" onclick="window.print()">⎙ Imprimir / PDF</button><button class="btn secondary" onclick="shareReceipt()">↗ Compartir</button><button class="btn primary" onclick="newSale()">＋ Nueva venta</button></div></div><div class="card"><div id="receipt-content" class="receipt"></div></div></section>
+      <footer><span class="suite-footer-label">DESARROLLADO POR</span> <span class="suite-footer-name"><a href="https://www.instagram.com/filmarte_audiovisuales/" target="_blank" rel="noopener">Filmarte Audiovisuales</a> · <a href="https://www.instagram.com/digitalcarmelo/" target="_blank" rel="noopener">Digital Carmelo</a> ♥ <span class="suite-by">by Caro Castro</span></span><span class="suite-legal">Prohibida su venta y su redistribución. Todos los derechos reservados de Digital Carmelo y Filmarte Audiovisuales.</span></footer>
+    </div>
+  </main>
+</div>
+<div class="modal-backdrop" id="modal"><div class="modal" id="modal-content"></div></div><div class="toast" id="toast"></div>
+<script>
+  const KEY='mini-facturador-v1';
+  const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n)||0);
+  const dateText = d => new Date(d).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'});
+  let db = JSON.parse(localStorage.getItem(KEY)||'null') || {settings:{name:'Mi negocio',phone:'',email:'',address:'',tax:'',footer:'Gracias por tu compra.'}, products:[{id:'p1',name:'Remera estampada',description:'Estampa personalizada',price:18500,sku:'REM-001'},{id:'p2',name:'Taza personalizada',description:'Taza cerámica',price:9500,sku:'TAZ-001'},{id:'p3',name:'Diseño personalizado',description:'Servicio de diseño',price:12000,sku:'SRV-001'}],clients:[{id:'c1',name:'María González',phone:'11 4567 8901',email:'maria@email.com',tax:'',notes:''},{id:'c2',name:'Juan Pérez',phone:'11 2233 4455',email:'',tax:'',notes:''}],sales:[],nextNumber:1,logo:''};
+  function save(){localStorage.setItem(KEY,JSON.stringify(db));}
+  function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
+  const viewTitles={dashboard:'Inicio','new-sale':'Nueva venta',history:'Historial',products:'Productos',clients:'Clientes',settings:'Configuración',receipt:'Comprobante'};
+  function showView(v){document.querySelectorAll('.view').forEach(e=>e.classList.remove('active'));document.getElementById(v+'-view').classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===v));document.getElementById('page-title').textContent=viewTitles[v]||'Mini Facturador'; if(v==='dashboard')renderDashboard();if(v==='history')renderHistory();if(v==='products')renderProducts();if(v==='clients')renderClients();if(v==='settings')fillSettings();if(v==='new-sale')initSale();}
+  document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+  function renderDashboard(){const today=new Date().toISOString().slice(0,10), month=today.slice(0,7);const todays=db.sales.filter(s=>s.date.slice(0,10)===today);document.getElementById('today-total').textContent=money(todays.reduce((a,s)=>a+s.total,0));document.getElementById('today-count').textContent=todays.length;document.getElementById('month-total').textContent=money(db.sales.filter(s=>s.date.slice(0,7)===month).reduce((a,s)=>a+s.total,0));document.getElementById('business-greeting').textContent=db.settings.name||'tu negocio';const rows=db.sales.slice(-5).reverse();document.getElementById('recent-sales').innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>Comprobante</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead><tbody>${rows.map(s=>`<tr><td><strong>#${s.number}</strong><br><span class="muted">${dateText(s.date)}</span></td><td>${s.client.name||'Cliente ocasional'}</td><td><strong>${money(s.total)}</strong></td><td>${statusBadge(s.status)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Todavía no hay ventas. Creá tu primer comprobante.</div>';}
+  function statusBadge(s){return `<span class="badge ${s==='paid'?'paid':s==='partial'?'partial':'pending'}">● ${s==='paid'?'Pagado':s==='partial'?'Pago parcial':'Pendiente'}</span>`}
+  let items=[];
+  function initSale(){if(!items.length)items=[{name:'',description:'',qty:1,price:0}];populateClientSelect();renderItems();updateSummary();}
+  function populateClientSelect(){const el=document.getElementById('sale-client-select');if(!el)return;const old=el.value;el.innerHTML='<option value="">Cliente ocasional</option>'+db.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');el.value=old;el.onchange=()=>{const c=db.clients.find(x=>x.id===el.value);if(c){document.getElementById('sale-client-name').value=c.name;document.getElementById('sale-client-phone').value=c.phone||'';document.getElementById('sale-client-email').value=c.email||'';document.getElementById('sale-client-tax').value=c.tax||'';}}}
+  function productOptions(){return '<option value="">Elegir producto…</option>'+db.products.map(p=>`<option value="${p.id}">${p.name} · ${money(p.price)}</option>`).join('')}
+  function renderItems(){const el=document.getElementById('items-list');if(!el)return;el.innerHTML=items.map((it,i)=>`<div class="item-row"><div class="field"><label>Producto</label><select onchange="pickProduct(${i},this.value)">${productOptions()}</select></div><div class="field"><label>Nombre</label><input value="${esc(it.name)}" placeholder="Producto o servicio" oninput="items[${i}].name=this.value" /></div><div class="field"><label>Cant.</label><input type="number" min="1" value="${it.qty}" oninput="items[${i}].qty=+this.value||1;updateSummary()" /></div><div class="field"><label>Precio unitario</label><input type="number" min="0" value="${it.price}" oninput="items[${i}].price=+this.value||0;updateSummary()" /></div><div class="item-total">${money(it.qty*it.price)}</div><button class="icon-btn" onclick="removeItem(${i})" title="Eliminar">×</button></div>`).join('');}
+  const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  function pickProduct(i,id){const p=db.products.find(x=>x.id===id);if(p){items[i]={...items[i],name:p.name,description:p.description||'',price:p.price};renderItems();updateSummary();}}
+  function addItem(){items.push({name:'',description:'',qty:1,price:0});renderItems();}
+  function removeItem(i){if(items.length===1){items=[{name:'',description:'',qty:1,price:0}]}else items.splice(i,1);renderItems();updateSummary();}
+  function updateSummary(){const subtotal=items.reduce((a,x)=>a+(+x.qty||0)*(+x.price||0),0), d=+document.getElementById('discount')?.value||0, discount=document.getElementById('discount-type')?.value==='amount'?d:subtotal*d/100, surcharge=+document.getElementById('surcharge')?.value||0,total=Math.max(0,subtotal-discount+surcharge);document.getElementById('summary-lines').innerHTML=`<div class="sum-line"><span>Subtotal</span><strong>${money(subtotal)}</strong></div><div class="sum-line"><span>Descuento</span><strong>-${money(discount)}</strong></div><div class="sum-line"><span>Recargo</span><strong>+${money(surcharge)}</strong></div>`;document.getElementById('summary-total').textContent=money(total);const st=document.getElementById('payment-status')?.value||'paid', paid=st==='paid'?total:st==='partial'?(+document.getElementById('partial-paid')?.value||0):0;document.getElementById('balance-box').innerHTML=st==='pending'?'<div class="sum-line total-line"><span>Queda pendiente</span><strong>'+money(total)+'</strong></div>':st==='partial'?'<div class="sum-line total-line"><span>Queda pendiente</span><strong>'+money(Math.max(0,total-paid))+'</strong></div>':'';return {subtotal,discount,surcharge,total,paid,balance:Math.max(0,total-paid)}}
+  function togglePartial(){const st=document.getElementById('payment-status').value;document.getElementById('partial-field').style.display=st==='partial'?'grid':'none';updateSummary()}
+  function completeSale(){const calc=updateSummary();if(!items.some(x=>x.name&&x.price>0)){toast('Agregá al menos un producto con precio.');return}const st=document.getElementById('payment-status').value;const sale={id:crypto.randomUUID?crypto.randomUUID():Date.now().toString(),number:String(db.nextNumber++).padStart(6,'0'),date:new Date().toISOString(),client:{name:document.getElementById('sale-client-name').value,phone:document.getElementById('sale-client-phone').value,email:document.getElementById('sale-client-email').value,tax:document.getElementById('sale-client-tax').value},items:items.filter(x=>x.name).map(x=>({...x})),...calc,discountType:document.getElementById('discount-type').value,payment:{method:document.getElementById('payment-method').value,note:document.getElementById('payment-note').value},status:st,notes:document.getElementById('sale-notes').value};db.sales.push(sale);save();renderReceipt(sale);showView('receipt');toast('Venta guardada correctamente.');}
+  function newSale(){items=[];showView('new-sale');}
+  function renderReceipt(s){const set=db.settings;document.getElementById('receipt-content').innerHTML=`<div class="receipt-head"><div class="receipt-brand">${set.logo?`<img src="${set.logo}" alt="Logo"/>`:''}<div><h2>${esc(set.name||'Mi negocio')}</h2><div class="muted">${esc(set.phone||'')} ${set.email?'· '+esc(set.email):''}</div><div class="muted">${esc(set.address||'')}</div></div></div><div class="receipt-title"><h2>COMPROBANTE DE VENTA</h2><p>NO VÁLIDO COMO FACTURA FISCAL</p></div></div><div class="receipt-meta"><div><small>Comprobante</small><strong>#${s.number}</strong></div><div><small>Fecha y hora</small><strong>${dateText(s.date)}</strong></div><div><small>Estado</small><strong>${s.status==='paid'?'Pagado':s.status==='partial'?'Pago parcial':'Pendiente'}</strong></div></div><p><strong>Cliente:</strong> ${esc(s.client.name||'Cliente ocasional')} ${s.client.tax?' · '+esc(s.client.tax):''}<br><span class="muted">${esc(s.client.phone||'')} ${s.client.email?'· '+esc(s.client.email):''}</span></p><div class="table-wrap"><table><thead><tr><th>Detalle</th><th>Cant.</th><th>Precio unit.</th><th>Total</th></tr></thead><tbody>${s.items.map(i=>`<tr><td>${esc(i.name)}${i.description?`<br><span class="muted">${esc(i.description)}</span>`:''}</td><td>${i.qty}</td><td>${money(i.price)}</td><td>${money(i.qty*i.price)}</td></tr>`).join('')}</tbody></table></div><div style="max-width:290px;margin-left:auto"><div class="sum-line"><span>Subtotal</span><strong>${money(s.subtotal)}</strong></div><div class="sum-line"><span>Descuento</span><strong>-${money(s.discount)}</strong></div><div class="sum-line"><span>Recargo</span><strong>+${money(s.surcharge)}</strong></div><div class="receipt-total">Total: ${money(s.total)}</div>${s.status==='partial'?`<div class="sum-line"><span>Abonado</span><strong>${money(s.paid)}</strong></div><div class="sum-line total-line"><span>Saldo pendiente</span><strong>${money(s.balance)}</strong></div>`:''}</div><p><strong>Forma de pago:</strong> ${esc(s.payment.method)}${s.payment.note?' · '+esc(s.payment.note):''}</p>${s.notes?`<p><strong>Observaciones:</strong> ${esc(s.notes)}</p>`:''}<div class="receipt-foot">${esc(set.footer||'')}<br>Comprobante de venta – No válido como factura fiscal.</div>`}
+  function currentReceipt(){return db.sales[db.sales.length-1]}
+  async function shareReceipt(){const s=currentReceipt();const text=`${db.settings.name||'Mi negocio'} · Comprobante #${s.number}\nTotal: ${money(s.total)}\nEstado: ${s.status==='paid'?'Pagado':s.status==='partial'?'Pago parcial':'Pendiente'}`;if(navigator.share){try{await navigator.share({title:'Comprobante #'+s.number,text})}catch(e){}}else window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
+  function whatsapp(s){const text=`${db.settings.name||'Mi negocio'}\nComprobante #${s.number}\nTotal: ${money(s.total)}\nEstado: ${s.status==='paid'?'Pagado':s.status==='partial'?'Pago parcial':'Pendiente'}`;window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
+  function renderHistory(){const q=(document.getElementById('history-search')?.value||'').toLowerCase(), st=document.getElementById('history-status')?.value||'', dt=document.getElementById('history-date')?.value||'';let arr=db.sales.filter(s=>(!q||s.number.includes(q)||s.client.name.toLowerCase().includes(q))&&(!st||s.status===st)&&(!dt||s.date.slice(0,10)===dt)).reverse();document.getElementById('history-table').innerHTML=arr.length?`<div class="table-wrap"><table><thead><tr><th>Comprobante</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${arr.map(s=>`<tr><td><strong>#${s.number}</strong><br><span class="muted">${dateText(s.date)}</span></td><td>${esc(s.client.name||'Cliente ocasional')}</td><td><strong>${money(s.total)}</strong><br><span class="muted">${s.payment.method}</span></td><td>${statusBadge(s.status)}</td><td><button class="btn ghost" onclick="openSale('${s.id}')">Ver</button><button class="btn ghost" onclick="whatsapp(${JSON.stringify(s).replace(/"/g,'&quot;')})">WhatsApp</button><button class="btn ghost" onclick="duplicateSale('${s.id}')">Duplicar</button><button class="btn ghost" onclick="deleteSale('${s.id}')">Eliminar</button></td></tr>`).join('')}</tbody></table></div><div class="muted" style="margin-top:14px">Mostrando ${arr.length} operación${arr.length===1?'':'es'} · Total filtrado: <strong>${money(arr.reduce((a,s)=>a+s.total,0))}</strong></div>`:'<div class="empty">No encontramos operaciones con esos filtros.</div>'}
+  function clearHistoryFilters(){document.getElementById('history-search').value='';document.getElementById('history-status').value='';document.getElementById('history-date').value='';renderHistory()}
+  function openSale(id){const s=db.sales.find(x=>x.id===id);if(s){renderReceipt(s);showView('receipt')}}
+  function duplicateSale(id){const s=db.sales.find(x=>x.id===id);if(!s)return;items=s.items.map(x=>({...x}));showView('new-sale');document.getElementById('sale-client-name').value=s.client.name;document.getElementById('sale-client-phone').value=s.client.phone;document.getElementById('sale-client-email').value=s.client.email;document.getElementById('sale-client-tax').value=s.client.tax;toast('Venta duplicada: revisá los datos y confirmala.')}
+  function deleteSale(id){if(confirm('¿Eliminar este comprobante? Esta acción no se puede deshacer.')){db.sales=db.sales.filter(s=>s.id!==id);save();renderHistory();renderDashboard();toast('Comprobante eliminado.')}}
+  function renderProducts(){document.getElementById('products-list').innerHTML=db.products.length?db.products.map(p=>`<div class="mini-card"><h4>${esc(p.name)}</h4><p>${esc(p.description||'Sin descripción')}</p><p><strong>${money(p.price)}</strong>${p.sku?' · SKU '+esc(p.sku):''}</p><div class="mini-actions"><button class="btn secondary small" onclick="openProductModal('${p.id}')">Editar</button><button class="btn danger small" onclick="deleteProduct('${p.id}')">Eliminar</button></div></div>`).join(''):'<div class="empty">No hay productos guardados.</div>'}
+  function openProductModal(id=''){const p=db.products.find(x=>x.id===id)||{name:'',description:'',price:'',sku:''};document.getElementById('modal-content').innerHTML=`<div class="modal-head"><h3>${id?'Editar producto':'Nuevo producto'}</h3><button class="btn ghost" onclick="closeModal()">×</button></div><div class="form-grid"><div class="field full"><label>Nombre</label><input id="m-name" value="${esc(p.name)}"></div><div class="field full"><label>Descripción (opcional)</label><input id="m-desc" value="${esc(p.description)}"></div><div class="field"><label>Precio</label><input id="m-price" type="number" value="${p.price}"></div><div class="field"><label>Código / SKU</label><input id="m-sku" value="${esc(p.sku)}"></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveProduct('${id}')">Guardar producto</button></div>`;document.getElementById('modal').classList.add('show')}
+  function saveProduct(id){const p={id:id||'p'+Date.now(),name:document.getElementById('m-name').value.trim(),description:document.getElementById('m-desc').value.trim(),price:+document.getElementById('m-price').value||0,sku:document.getElementById('m-sku').value.trim()};if(!p.name){toast('Escribí un nombre.');return}if(id)db.products=db.products.map(x=>x.id===id?p:x);else db.products.push(p);save();closeModal();renderProducts();toast('Producto guardado.')}
+  function deleteProduct(id){if(confirm('¿Eliminar este producto?')){db.products=db.products.filter(p=>p.id!==id);save();renderProducts();}}
+  function renderClients(){document.getElementById('clients-list').innerHTML=db.clients.length?db.clients.map(c=>`<div class="mini-card"><h4>${esc(c.name)}</h4><p>☎ ${esc(c.phone||'Sin teléfono')}</p><p>${esc(c.email||'Sin email')}</p>${c.tax?`<p>DNI/CUIT: ${esc(c.tax)}</p>`:''}<div class="mini-actions"><button class="btn secondary small" onclick="openClientModal('${c.id}')">Editar</button><button class="btn danger small" onclick="deleteClient('${c.id}')">Eliminar</button></div></div>`).join(''):'<div class="empty">No hay clientes guardados.</div>'}
+  function openClientModal(id=''){const c=db.clients.find(x=>x.id===id)||{name:'',phone:'',email:'',tax:'',notes:''};document.getElementById('modal-content').innerHTML=`<div class="modal-head"><h3>${id?'Editar cliente':'Nuevo cliente'}</h3><button class="btn ghost" onclick="closeModal()">×</button></div><div class="form-grid"><div class="field full"><label>Nombre</label><input id="m-cname" value="${esc(c.name)}"></div><div class="field"><label>Teléfono / WhatsApp</label><input id="m-cphone" value="${esc(c.phone)}"></div><div class="field"><label>Email</label><input id="m-cemail" value="${esc(c.email)}"></div><div class="field"><label>DNI / CUIT</label><input id="m-ctax" value="${esc(c.tax)}"></div><div class="field full"><label>Observaciones</label><textarea id="m-cnotes">${esc(c.notes)}</textarea></div></div><div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Cancelar</button><button class="btn primary" onclick="saveClient('${id}')">Guardar cliente</button></div>`;document.getElementById('modal').classList.add('show')}
+  function saveClient(id){const c={id:id||'c'+Date.now(),name:document.getElementById('m-cname').value.trim(),phone:document.getElementById('m-cphone').value.trim(),email:document.getElementById('m-cemail').value.trim(),tax:document.getElementById('m-ctax').value.trim(),notes:document.getElementById('m-cnotes').value.trim()};if(!c.name){toast('Escribí un nombre.');return}if(id)db.clients=db.clients.map(x=>x.id===id?c:x);else db.clients.push(c);save();closeModal();renderClients();populateClientSelect();toast('Cliente guardado.')}
+  function deleteClient(id){if(confirm('¿Eliminar este cliente?')){db.clients=db.clients.filter(c=>c.id!==id);save();renderClients();populateClientSelect();}}
+  function closeModal(){document.getElementById('modal').classList.remove('show')}
+  function fillSettings(){const s=db.settings;['name','phone','email','address','tax','footer'].forEach(k=>document.getElementById('set-'+k).value=s[k]||'');document.getElementById('logo-preview').innerHTML=s.logo?`<img src="${s.logo}" alt="Logo"/>`:'▣'}
+  function saveSettings(){db.settings={...db.settings,name:document.getElementById('set-name').value.trim(),phone:document.getElementById('set-phone').value.trim(),email:document.getElementById('set-email').value.trim(),address:document.getElementById('set-address').value.trim(),tax:document.getElementById('set-tax').value.trim(),footer:document.getElementById('set-footer').value.trim()};save();document.getElementById('business-greeting').textContent=db.settings.name||'tu negocio';toast('Configuración guardada.')}
+  function loadLogo(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{db.settings.logo=r.result;save();fillSettings();updateAvatar();toast('Logo guardado localmente.')};r.readAsDataURL(f)}
+  function resetDemo(){if(confirm('¿Borrar todos los datos guardados y volver al estado inicial?')){localStorage.removeItem(KEY);location.reload()}}
+  function updateAvatar(){const nm=document.getElementById('biz-name');if(nm)nm.textContent=db.settings.name||'Mi negocio';const el=document.getElementById('business-avatar');if(el)el.innerHTML=db.settings.logo?`<img src="${db.settings.logo}" alt="Logo del negocio">`:((db.settings.name||'MN').split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase())}
+  function replaceZero(el){if(el.value==='0')el.select()}
+  function setupAdjustmentUI(){const oldGroup=document.querySelector('#discount')?.closest('.form-grid.three');if(!oldGroup)return;oldGroup.style.display='none';const box=document.createElement('div');box.className='form-grid';box.innerHTML='<div class="field"><label>Tipo de ajuste</label><select id="adjustment-type"><option value="none">Sin ajuste</option><option value="discount-percent">Descuento (%)</option><option value="discount-amount">Descuento ($)</option><option value="surcharge-percent">Recargo (%)</option><option value="surcharge-amount">Recargo ($)</option></select></div><div class="field"><label id="adjustment-value-label">Valor</label><input id="adjustment-value" type="number" min="0" step="0.01" value="0"></div>';oldGroup.parentNode.insertBefore(box,oldGroup);const type=document.getElementById('adjustment-type'),value=document.getElementById('adjustment-value');const sync=()=>{const t=type.value,n=+value.value||0;document.getElementById('discount').value=t==='discount-percent'||t==='discount-amount'?n:0;document.getElementById('discount-type').value=t==='discount-amount'||t==='surcharge-amount'?'amount':'percent';document.getElementById('surcharge').value=t==='surcharge-amount'?n:t==='surcharge-percent'?((items.reduce((a,x)=>a+(+x.qty||0)*(+x.price||0),0)*n)/100):0;document.getElementById('adjustment-value-label').textContent=t.includes('percent')?'Porcentaje (%)':t.includes('amount')?'Monto ($)':'Valor';updateSummary()};type.addEventListener('change',sync);value.addEventListener('focus',()=>replaceZero(value));value.addEventListener('input',sync);document.addEventListener('focusin',e=>{if(e.target.type==='number'&&e.target.value==='0')replaceZero(e.target)});window.syncAdjustment=sync;sync()}
+  document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+  setupAdjustmentUI();document.getElementById('items-list').addEventListener('input',()=>window.syncAdjustment?.());document.getElementById('items-list').addEventListener('change',()=>window.syncAdjustment?.());updateAvatar();renderDashboard();initSale();
+</script>
+<script src="js/vendor/JsBarcode.all.min.js"></script>
+<script src="js/stock.js"></script>
+<script src="js/suite-productos.js"></script>
+<script src="js/suite-conexion.js"></script>
+<div class="suite-promo" role="complementary" aria-label="Suite Potenciadora">
+<button class="suite-promo__close" type="button" aria-label="Cerrar promoción">×</button>
+<p class="suite-promo__eyebrow">SUITE POTENCIADORA</p>
+<p class="suite-promo__text">¿Todavía no conocés las herramientas para hacer crecer tu negocio?</p>
+<a class="suite-promo__cta" href="https://wa.me/5491176508119?text=Hola%2C%20quiero%20conocer%20la%20Suite%20Potenciadora%20de%20Digital%20Carmelo" target="_blank" rel="noopener">Conocé la suite por WhatsApp</a>
+</div>
+<script>
+(function(){
+  var messages=[
+    '¿Todavía no conocés las herramientas para hacer crecer tu negocio?',
+    'Potenciar tu negocio es más fácil con las herramientas adecuadas.',
+    'No es hacer más. Es crecer distinto.',
+    'Descubrí todo lo que podés crear con la Suite Potenciadora.'
+  ];
+  var box=document.querySelector('.suite-promo');
+  if(!box)return;
+  var text=box.querySelector('.suite-promo__text');
+  var close=box.querySelector('.suite-promo__close');
+  var index=0;
+  var timer;
+  function rotate(){
+    box.classList.add('is-hiding');
+    setTimeout(function(){
+      index=(index+1)%messages.length;
+      text.textContent=messages[index];
+      box.classList.remove('is-hiding');
+    },350);
+  }
+  timer=setInterval(rotate,9000);
+  close.addEventListener('click',function(){
+    clearInterval(timer);
+    box.classList.add('is-hiding');
+    setTimeout(function(){box.remove()},350);
+  });
+})();
+</script>
+
+<style>
+/* Ajustes de marca: el protagonista es el negocio del cliente; Digital Carmelo queda como firma discreta */
+:root{--strip:30px}
+.dc-strip{position:fixed;top:0;left:0;right:0;height:var(--strip);z-index:6;display:flex;align-items:center;justify-content:center;gap:8px;background:#07081f;color:rgba(211,172,73,.85);font-size:10.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;border-bottom:1px solid rgba(211,172,73,.25)}
+.dc-strip img{width:18px;height:18px;object-fit:contain}
+body{padding-top:var(--strip)}
+.app-shell{min-height:calc(100vh - var(--strip))}
+aside{width:212px;top:var(--strip);inset:var(--strip) auto 0 0;padding:18px 12px}
+main{margin-left:212px;width:calc(100% - 212px);display:flex;flex-direction:column;min-height:calc(100vh - var(--strip))}
+.topbar{top:var(--strip);height:78px}
+.brand{padding:2px 8px 20px;gap:10px}
+.app-ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:rgba(211,172,73,.16);color:#fcca55;font-size:16px;flex:0 0 auto}
+.brand strong{font-size:15px}.brand small{font-size:11.5px}
+.nav{gap:3px}.nav button{padding:10px 11px;font-size:14.5px}
+aside .aside-tip{font-size:12px;padding:11px}
+.client-brand{display:flex;align-items:center;gap:14px;min-width:0}
+.avatar.client-logo{width:54px;height:54px;border-radius:14px;background:#fff;border:1px solid var(--line);color:#0d0e32;font-size:18px;flex:0 0 auto;padding:4px}
+.client-brand b{display:block;font-size:20px;letter-spacing:-.02em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.client-brand .crumb{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.client-brand #page-title{font:inherit;color:inherit;margin:0}
+.content{flex:1;display:flex;flex-direction:column;width:100%}
+.content>footer{margin:auto -34px 0!important;padding-top:12px}
+.content>.view.active+footer,.content>footer{margin-top:auto}
+.content{padding-bottom:0}
+.view.active{margin-bottom:48px}
+@media(max-width:980px){aside{width:74px}main{margin-left:74px;width:calc(100% - 74px)}.content>footer{margin:auto -20px 0!important}}
+@media(max-width:680px){.dc-strip{font-size:9px;letter-spacing:.14em}aside{position:sticky;top:var(--strip);inset:auto;width:100%;height:auto;padding:6px 7px}main{margin-left:0;width:100%}.topbar{top:0;height:auto;padding:10px 14px;flex-wrap:wrap}.avatar.client-logo{width:44px;height:44px}.client-brand b{font-size:17px}.content>footer{margin:auto -14px 0!important}}
+@media print{.dc-strip{display:none}body{padding-top:0}}
+</style>
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>
