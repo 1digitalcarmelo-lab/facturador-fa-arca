@@ -6,12 +6,12 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_tKfKztMCb7iwDEIUdrgszA_qzPSPLZo";
 
-const PRODUCT_SLUG = "mini-facturador";
+const PRODUCT_SLUG = "facturador-arca";
 const SUITE_URL = "https://suite.digitalcarmelo.com/";
 const WHATSAPP_URL =
   "https://wa.me/5491176508119?text=" +
   encodeURIComponent(
-    "Hola Digital Carmelo 👋 Estoy viendo el Facturador Digital Carmelo y quiero saber cómo puedo incorporarlo a mi cuenta."
+    "Hola Digital Carmelo 👋 Estoy viendo el Facturador ARCA de Digital Carmelo y quiero saber cómo puedo incorporarlo a mi cuenta."
   );
 const supabase = createClient(
   SUPABASE_URL,
@@ -620,7 +620,7 @@ function renderLogin(
         </p>
 
         <h1 class="dc-auth-title">
-          Facturador Digital Carmelo
+          Facturador ARCA · Digital Carmelo
         </h1>
 
         <p class="dc-auth-copy">

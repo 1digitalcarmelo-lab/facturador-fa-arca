@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d0e32" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@500;600&display=swap" rel="stylesheet">
-  <title>Facturador · Comprobantes de venta no fiscales · Digital Carmelo</title>
+  <title>Facturador ARCA · Factura electrónica C · Digital Carmelo</title>
   <style>
     :root { --ink:#101828; --muted:#667085; --line:#e4e7ec; --soft:#f8fafc; --orange:#f97316; --orange-dark:#ea580c; --green:#079455; --red:#d92d20; --navy:#101828; --radius:18px; }
     * { box-sizing:border-box; }
@@ -142,25 +142,26 @@ footer .suite-legal{color:#98a2b3}</style>
 @media(max-width:980px){.stats.four{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:680px){aside .nav{grid-template-columns:repeat(4,minmax(0,1fr))!important}.stats.four{grid-template-columns:1fr 1fr}.scan-box{flex-wrap:wrap}.scan-box input{flex-basis:100%}.stock-table td:last-child .btn{padding:6px}}
 </style>
-<meta name="description" content="Ventas, clientes, stock y comprobantes de venta internos (no fiscales: no reemplazan la factura de ARCA).">
+<meta name="description" content="Factura electrónica C con CAE y QR para monotributistas, más ventas, clientes y stock.">
 <link rel="icon" href="img/dc-mark.png" type="image/png">
 <link rel="apple-touch-icon" href="img/dc-mark.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Facturador · Comprobantes de venta no fiscales">
+<meta property="og:title" content="Facturador ARCA · Factura electrónica C">
 <meta property="og:url" content="https://facturador.digitalcarmelo.com/">
-<meta property="og:description" content="Ventas, clientes, stock y comprobantes de venta internos (no fiscales: no reemplazan la factura de ARCA).">
+<meta property="og:description" content="Factura electrónica C con CAE y QR para monotributistas, más ventas, clientes y stock.">
 <meta property="og:image" content="https://facturador.digitalcarmelo.com/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://facturador.digitalcarmelo.com/img/og.jpg">
+<link rel="stylesheet" href="css/arca.css">
 </head>
 <body class="dc-auth-pending">
 <div id="dc-auth-root"></div>
 <div class="dc-strip" aria-label="Digital Carmelo · Suite Potenciadora"><img src="img/dc-mark.png" alt="" width="18" height="18"><span>Digital Carmelo · Suite Potenciadora</span></div>
 <div class="app-shell">
   <aside>
-    <div class="brand"><span class="app-ic" aria-hidden="true">▤</span><div><strong>Facturador</strong><small>Comprobantes y ventas</small></div></div>
+    <div class="brand"><span class="app-ic" aria-hidden="true">▤</span><div><strong>Facturador ARCA</strong><small>Factura C · ventas · stock</small></div></div>
     <nav class="nav">
       <button class="active" data-view="dashboard"><span>⌂</span><span>Inicio</span></button>
       <button data-view="new-sale"><span>＋</span><span>Nueva venta</span></button>
@@ -172,10 +173,10 @@ footer .suite-legal{color:#98a2b3}</style>
     <div class="aside-tip">Creá un comprobante en segundos y mantené tus ventas ordenadas.</div>
   </aside>
   <main>
-    <header class="topbar"><div class="client-brand"><div class="avatar client-logo" id="business-avatar">DC</div><div><b id="biz-name">Mi negocio</b><span class="crumb">Facturador · <span id="page-title">Inicio</span></span></div></div><div class="top-actions"><button class="btn primary" onclick="showView('new-sale')">＋ Nueva venta</button></div></header>
+    <header class="topbar"><div class="client-brand"><div class="avatar client-logo" id="business-avatar">DC</div><div><b id="biz-name">Mi negocio</b><span class="crumb">Facturador ARCA · <span id="page-title">Inicio</span></span></div></div><div class="top-actions"><button class="btn primary" onclick="showView('new-sale')">＋ Nueva venta</button></div></header>
     <div class="content">
       <section id="dashboard-view" class="view active">
-        <div class="welcome suite-hero"><div><h2>Hola, <span id="business-greeting">tu negocio</span> 👋</h2><p>Registrá tu venta, enviásela a tu cliente y guardá el historial.</p><p class="muted" style="font-size:13px;margin-top:6px">Los comprobantes son internos y <strong>no fiscales</strong>: no reemplazan la factura electrónica de ARCA.</p></div><button class="btn primary" onclick="showView('new-sale')">＋ Crear comprobante</button></div>
+        <div class="welcome suite-hero"><div><h2>Hola, <span id="business-greeting">tu negocio</span> 👋</h2><p>Registrá tu venta, enviásela a tu cliente y guardá el historial.</p><p class="muted" style="font-size:13px;margin-top:6px">Cada venta te deja un comprobante interno; desde ahí emitís la <strong>Factura C de ARCA</strong> con CAE y QR.</p></div><button class="btn primary" onclick="showView('new-sale')">＋ Crear comprobante</button></div>
         <div class="stats"><div class="stat"><div><span>Ventas de hoy</span><strong id="today-total">$0</strong></div><div class="stat-icon">↗</div></div><div class="stat"><div><span>Operaciones de hoy</span><strong id="today-count">0</strong></div><div class="stat-icon">▤</div></div><div class="stat"><div><span>Ventas del mes</span><strong id="month-total">$0</strong></div><div class="stat-icon">◒</div></div></div>
         <div class="grid-2"><div class="card"><div class="card-head"><div><h3>Últimas operaciones</h3><div class="muted">Tus ventas más recientes</div></div><button class="btn secondary small" onclick="showView('history')">Ver historial</button></div><div id="recent-sales"></div></div><div class="card"><div class="card-head"><div><h3>Accesos rápidos</h3><div class="muted">Lo que más usás</div></div></div><div style="display:grid;gap:10px"><button class="btn secondary" onclick="showView('products')">▦ Administrar productos</button><button class="btn secondary" onclick="showView('clients')">♙ Ver clientes</button><button class="btn secondary" onclick="showView('settings')">⚙ Configurar negocio</button></div></div></div>
       </section>
@@ -247,6 +248,9 @@ footer .suite-legal{color:#98a2b3}</style>
 <script src="js/stock.js"></script>
 <script src="js/suite-productos.js"></script>
 <script src="js/suite-conexion.js"></script>
+<script src="js/vendor/qrcode.js"></script>
+<script src="js/arca-config.js"></script>
+<script src="js/arca.js"></script>
 <div class="suite-promo" role="complementary" aria-label="Suite Potenciadora">
 <button class="suite-promo__close" type="button" aria-label="Cerrar promoción">×</button>
 <p class="suite-promo__eyebrow">SUITE POTENCIADORA</p>

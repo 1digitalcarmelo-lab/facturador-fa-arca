@@ -1,0 +1,40 @@
+/* Facturador ARCA */
+.arca-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:#fff8eb;border:1px solid #f1d58f;border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:14px}
+.arca-item{grid-template-columns:minmax(0,2.4fr) minmax(70px,.6fr) minmax(100px,1fr) auto auto!important}
+.arca-guia{margin:12px 0 0;padding-left:20px;display:grid;gap:10px;font-size:14px;line-height:1.5}
+.arca-guia em{font-style:normal;font-weight:600;color:#0d0e32;background:#f5f6fb;padding:0 4px;border-radius:4px}
+/* Comprobante */
+.af{position:relative;max-width:760px;margin:auto;border:1.5px solid #0d0e32;color:#111;background:#fff;font-size:13px;line-height:1.45;overflow:hidden}
+.af p{margin:2px 0}
+.af h2{margin:0 0 6px;font-size:18px}
+.af-orig{text-align:center;font-weight:800;letter-spacing:.2em;border-bottom:1.5px solid #0d0e32;padding:4px}
+.af-head{display:grid;grid-template-columns:1fr auto 1fr;border-bottom:1.5px solid #0d0e32}
+.af-em,.af-datos{padding:12px 14px}
+.af-datos{border-left:1.5px solid #0d0e32}
+.af-letra{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:64px;border-left:1.5px solid #0d0e32;border-bottom:1.5px solid #0d0e32;align-self:start;padding:4px 0 6px;margin-left:-1px}
+.af-letra b{font-size:38px;line-height:1}
+.af-letra small{font-size:9px;font-weight:700}
+.af-serv,.af-rec{padding:8px 14px;border-bottom:1.5px solid #0d0e32}
+.af-rec{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px}
+.af-asoc{padding:6px 14px;border-bottom:1.5px solid #0d0e32;font-weight:700}
+.af-tabla{width:100%;border-collapse:collapse}
+.af-tabla th{background:#eef0f6;text-align:left;font-size:12px;padding:6px 10px;border-bottom:1px solid #0d0e32}
+.af-tabla td{padding:6px 10px;border-bottom:1px solid #e3e5ee;vertical-align:top}
+.af-tabla th:nth-child(n+2),.af-tabla td:nth-child(n+2){text-align:right;white-space:nowrap}
+.af-tot{padding:10px 14px;border-top:1.5px solid #0d0e32;margin-left:auto;max-width:340px}
+.af-tot p{display:flex;justify-content:space-between;gap:20px}
+.af-total{font-size:16px;border-top:1px solid #0d0e32;padding-top:4px;margin-top:4px!important}
+.af-pie{display:flex;gap:16px;align-items:center;padding:12px 14px;border-top:1.5px solid #0d0e32}
+.af-aut{font-weight:800;font-style:italic;font-size:15px}
+.af-marca{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) rotate(-22deg);font-size:30px;font-weight:900;letter-spacing:.06em;color:rgba(200,30,30,.18);white-space:nowrap;pointer-events:none;z-index:2}
+#arca-print{display:none}
+@media(max-width:680px){.af{font-size:11.5px}.af-head{grid-template-columns:1fr auto}.af-datos{grid-column:1 / -1;border-left:0;border-top:1.5px solid #0d0e32}.af-rec{grid-template-columns:1fr}.af-marca{font-size:18px}.arca-item{grid-template-columns:1fr 1fr!important}.arca-item .field:first-child{grid-column:1 / -1}}
+@media print{
+  body.print-arca .app-shell,body.print-arca .dc-strip,body.print-arca .suite-promo,body.print-arca .modal-backdrop,body.print-arca .toast,body.print-arca #labels-print{display:none!important}
+  body.print-arca{padding:0!important;background:#fff}
+  body.print-arca #arca-print{display:block!important}
+  body.print-arca .af{max-width:none;border-width:1px}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:12mm}
+}
+@media(max-width:680px){aside .nav button{min-width:0;overflow:hidden}aside .nav button span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
