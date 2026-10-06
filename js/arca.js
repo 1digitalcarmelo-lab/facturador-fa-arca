@@ -69,8 +69,40 @@
     const { data: u } = await s.auth.getUser();
     if (!u || !u.user) throw new Error('Iniciá sesión para guardar tus datos fiscales.');
     const f = db.fiscal;
-    const { error } = await s.from('arca_config').upsert({ user_id: u.user.id, cuit: soloNum(f.cuit), razon_social: f.razonSocial, domicilio: f.domicilio, iibb: f.iibb || null, inicio_actividades: f.inicio || null, pto_vta: +f.ptoVta, updated_at: new Date().toISOString() });
+    const { error } = await s.from('arca_config').upsert({ user_id: u.user.id, cuit: soloNum(f.cuit), razon_social: f.razonSocial, domicilio: f.domicilio, iibb: f.iibb || null, inicio_actividades: f.inicio || null, pto_vta: +f.ptoVta, condicion: f.condicion || 'monotributo', categoria: f.categoria || null, tope_anual: f.tope ? +f.tope : null, updated_at: new Date().toISOString() });
     if (error) throw new Error('No se pudieron guardar los datos fiscales: ' + error.message);
+  }
+
+  // Trae los datos fiscales guardados en la nube (otro celular/compu) y lo facturado en los últimos 12 meses
+  const COND = { monotributo: 'Responsable Monotributo', social: 'Monotributista Social' };
+  let facturado12 = null;
+  async function sincronizar() {
+    if (DEMO) return;
+    try {
+      const s = await nube();
+      const { data: u } = await s.auth.getUser();
+      if (!u || !u.user) return;
+      const { data: c } = await s.from('arca_config').select('*').eq('user_id', u.user.id).maybeSingle();
+      if (c && !db.fiscal.cuit) {
+        Object.assign(db.fiscal, { cuit: c.cuit, ptoVta: c.pto_vta, razonSocial: c.razon_social, domicilio: c.domicilio, iibb: c.iibb || '', inicio: c.inicio_actividades || '', condicion: c.condicion, categoria: c.categoria || '', tope: c.tope_anual || '' });
+        save();
+      }
+      const desde = masDias(hoy(), -365);
+      const { data: cs } = await s.from('arca_comprobantes').select('cbte_tipo,imp_total').eq('ambiente', 'prod').gte('cbte_fch', desde);
+      facturado12 = (cs || []).reduce((a, x) => a + (x.cbte_tipo === TIPO.NC ? -1 : 1) * Number(x.imp_total), 0);
+      if (document.getElementById('arca-view')?.classList.contains('active')) renderArca();
+    } catch (e) { /* sin conexión: se usa lo guardado en este dispositivo */ }
+  }
+  function topeHtml() {
+    const f = db.fiscal;
+    const local = db.comprobantes.filter((c) => !c.demo && c.fecha >= masDias(hoy(), -365)).reduce((a, c) => a + (c.tipo === 'NC' ? -c.total : c.total), 0);
+    const total = facturado12 != null ? facturado12 : local;
+    if (!(+f.tope > 0)) return `<p class="muted" style="margin:12px 0 0">Facturado en los últimos 12 meses: <strong>${money(total)}</strong>. Cargá el tope de tu categoría en <em>Datos fiscales</em> para ver cuánto te queda.</p>`;
+    const pct = Math.min(100, Math.round(total / f.tope * 100));
+    const color = pct >= 90 ? '#c0392b' : pct >= 75 ? '#e08a00' : '#2a9d5c';
+    return `<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><strong>Tope de la categoría ${esc(f.categoria || '')}</strong><span class="muted">${money(total)} de ${money(+f.tope)} · ${pct}%</span></div>
+      <div style="height:10px;border-radius:6px;background:rgba(0,0,0,.08);margin-top:6px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:6px"></div></div>
+      <small class="muted">Te quedan ${money(Math.max(0, f.tope - total))} para facturar en los próximos 12 meses móviles${pct >= 90 ? ' · ⚠ estás cerca del tope: consultá si te conviene recategorizarte' : ''}.</small></div>`;
   }
 
   // ---------------------------------------------------------------- emitir
@@ -113,8 +145,9 @@
     const lista = db.comprobantes.slice().reverse();
     v.innerHTML = `<div class="welcome suite-hero"><div><h2>Facturas ARCA</h2><p>Factura C y Nota de Crédito C para monotributistas, con CAE y QR.</p></div><div class="toolbar" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end"><button class="btn secondary" onclick="arcaDatos()">⚙ Datos fiscales</button>${configurado() ? '<button class="btn primary" onclick="arcaNueva()">＋ Factura sin venta</button>' : ''}</div></div>
     <div class="card" style="margin-bottom:18px">${configurado()
-      ? `<div class="card-head"><div><h3>${esc(f.razonSocial)}</h3><div class="muted">CUIT ${cuitFmt(f.cuit)} · Punto de venta ${pad(f.ptoVta, 5)} · Responsable Monotributo</div></div>${etiquetaModo()}</div>
+      ? `<div class="card-head"><div><h3>${esc(f.razonSocial)}</h3><div class="muted">CUIT ${cuitFmt(f.cuit)} · Punto de venta ${pad(f.ptoVta, 5)} · ${COND[f.condicion] || COND.monotributo}</div></div>${etiquetaModo()}</div>
          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><button class="btn secondary small" id="arca-verif">↻ Verificar conexión con ARCA</button><span class="muted" id="arca-verif-msg">${f.verificado ? 'Última verificación: ' + esc(f.verificado) : ''}</span></div>
+         ${topeHtml()}
          ${DEMO ? '<p class="notice" style="margin-top:14px">Estás en <strong>modo demostración</strong>: los comprobantes llevan un CAE de prueba y la leyenda "SIN VALIDEZ FISCAL". Sirve para mostrar la app y practicar. Cuando tu cuenta esté conectada a ARCA, las facturas salen con CAE real.</p>' : ''}`
       : `<div class="card-head"><div><h3>Conectá tu CUIT para empezar a facturar</h3><div class="muted">Son 3 pasos, una sola vez.</div></div>${etiquetaModo()}</div>${guiaHtml()}<button class="btn primary" style="margin-top:14px" onclick="arcaDatos()">Cargar mis datos fiscales</button>`}</div>
     <div class="card"><div class="card-head"><div><h3>Comprobantes emitidos</h3><div class="muted">${lista.length} comprobante${lista.length === 1 ? '' : 's'}</div></div></div>
@@ -154,7 +187,9 @@
         <div class="field full"><label>Domicilio comercial</label><input id="af-dom" value="${esc(f.domicilio || s.address || '')}" placeholder="Calle, número, localidad"></div>
         <div class="field"><label>Ingresos Brutos (opcional)</label><input id="af-iibb" value="${esc(f.iibb || '')}" placeholder="Número o Exento"></div>
         <div class="field"><label>Inicio de actividades</label><input id="af-ini" type="date" value="${esc(f.inicio || '')}"></div>
-        <div class="field full"><label>Condición frente al IVA</label><input value="Responsable Monotributo" disabled><small class="muted">Esta versión emite Factura C. Facturas A y B: próximamente.</small></div>
+        <div class="field full"><label>Condición frente al IVA</label><select id="af-cond"><option value="monotributo"${f.condicion !== 'social' ? ' selected' : ''}>Responsable Monotributo</option><option value="social"${f.condicion === 'social' ? ' selected' : ''}>Monotributista Social</option></select><small class="muted">Esta versión emite Factura C. Facturas A y B: próximamente.</small></div>
+        <div class="field"><label>Categoría (opcional)</label><input id="af-cat" maxlength="2" placeholder="A" value="${esc(f.categoria || '')}"></div>
+        <div class="field"><label>Tope anual de tu categoría (opcional)</label><input id="af-tope" type="number" min="0" step="1" placeholder="Ingresos brutos máximos" value="${esc(f.tope || '')}"><small class="muted">Lo ves en la tabla de categorías de ARCA. Sirve para avisarte si te acercás.</small></div>
       </div>
       <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">¿Cómo conecto mi CUIT con ARCA? (3 pasos)</summary>${guiaHtml()}</details>
       <p class="muted" id="af-msg" style="margin:10px 0 0"></p>
@@ -167,7 +202,7 @@
       if (!cuitValido(cuit)) { msg.textContent = '⚠ Revisá el CUIT: tiene que tener 11 números y el último tiene que coincidir.'; return; }
       if (!(pv >= 1 && pv <= 99998)) { msg.textContent = '⚠ Poné el número del punto de venta que creaste en ARCA.'; return; }
       if (!rs || !dom) { msg.textContent = '⚠ Completá razón social y domicilio comercial.'; return; }
-      Object.assign(db.fiscal, { cuit, ptoVta: pv, razonSocial: rs, domicilio: dom, iibb: document.getElementById('af-iibb').value.trim(), inicio: document.getElementById('af-ini').value });
+      Object.assign(db.fiscal, { cuit, ptoVta: pv, razonSocial: rs, domicilio: dom, iibb: document.getElementById('af-iibb').value.trim(), inicio: document.getElementById('af-ini').value, condicion: document.getElementById('af-cond').value, categoria: document.getElementById('af-cat').value.trim().toUpperCase(), tope: +document.getElementById('af-tope').value || '' });
       save();
       if (!DEMO) { try { msg.textContent = 'Guardando…'; await guardarConfigNube(); } catch (e) { msg.textContent = '⚠ ' + e.message; return; } }
       closeModal(); renderArca(); toast('Datos fiscales guardados.');
@@ -265,7 +300,7 @@
       ${c.demo ? '<div class="af-marca">SIN VALIDEZ FISCAL · ' + (DEMO ? 'DEMOSTRACIÓN' : 'HOMOLOGACIÓN') + '</div>' : ''}
       <div class="af-orig">ORIGINAL</div>
       <div class="af-head">
-        <div class="af-em"><h2>${esc(e.razonSocial)}</h2><p><b>Domicilio comercial:</b> ${esc(e.domicilio)}</p><p><b>Condición frente al IVA:</b> Responsable Monotributo</p></div>
+        <div class="af-em"><h2>${esc(e.razonSocial)}</h2><p><b>Domicilio comercial:</b> ${esc(e.domicilio)}</p><p><b>Condición frente al IVA:</b> ${COND[e.condicion] || COND.monotributo}</p></div>
         <div class="af-letra"><b>C</b><small>COD. ${pad(c.cbteTipo, 3)}</small></div>
         <div class="af-datos"><h2>${c.cbteTipo === 13 ? 'NOTA DE CRÉDITO' : 'FACTURA'}</h2>
           <p><b>Punto de venta:</b> ${pad(c.ptoVta, 5)} &nbsp; <b>Comp. Nro:</b> ${pad(c.numero, 8)}</p>
@@ -366,6 +401,7 @@
       stats.after(n);
     }
     // Condiciones de IVA oficiales (solo en la nube; si falla, quedan las de la lista)
+    sincronizar();
     if (!DEMO && !db.fiscal.condiciones) llamar('condiciones').then((r) => { if (r.condiciones && r.condiciones.length) { db.fiscal.condiciones = r.condiciones; save(); } }).catch(() => {});
   })();
 

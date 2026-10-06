@@ -1,9 +1,9 @@
 -- Facturador ARCA · tablas para los datos fiscales y los comprobantes emitidos.
--- NO aplicado todavía: lo aplica Alexis en el proyecto de Supabase cuando esté todo listo.
+-- Aplicado en el proyecto rkkulnehklzqqmffvaqz (migración arca_facturador).
 
 -- 1) Producto nuevo (fuera de la Suite salvo que se active ARCA_EN_SUITE en la función)
 insert into public.products (product_slug, public_name, short_description, app_url, category, is_active, display_order, allows_trial, default_free_usage)
-values ('facturador-arca', 'Facturador ARCA', 'Factura electrónica C para monotributistas, conectada a ARCA.', 'https://facturador-arca.digitalcarmelo.com/', 'herramientas', true, 65, true, 1)
+values ('facturador-arca', 'Facturador ARCA', 'Factura electrónica C para monotributistas, conectada a ARCA.', 'https://facturador-fa-arca.netlify.app/', 'herramientas', true, 65, true, 1)
 on conflict (product_slug) do nothing;
 
 -- 2) Datos fiscales de cada usuario (los carga desde la app)
@@ -16,6 +16,8 @@ create table if not exists public.arca_config (
   inicio_actividades date,
   pto_vta integer not null check (pto_vta between 1 and 99998),
   condicion text not null default 'monotributo',
+  categoria text,                        -- categoría de monotributo (para el control del tope)
+  tope_anual numeric(14,2),              -- ingresos brutos máximos de la categoría (últimos 12 meses)
   verificado_at timestamptz,
   updated_at timestamptz not null default now()
 );
@@ -56,3 +58,17 @@ create index if not exists arca_comprobantes_user on public.arca_comprobantes (u
 alter table public.arca_comprobantes enable row level security;
 create policy "arca_comprobantes: ver los propios" on public.arca_comprobantes for select using (auth.uid() = user_id);
 -- sin políticas de insert/update/delete: los comprobantes emitidos no se tocan desde el navegador
+
+-- 4) CUITs habilitados por usuario: solo Digital Carmelo los carga (sin políticas de escritura).
+--    La función "arca" no factura por un CUIT que no esté acá para ese usuario.
+create table if not exists public.arca_cuits (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  cuit text not null check (cuit ~ '^[0-9]{11}$'),
+  modo text not null default 'propio' check (modo in ('propio', 'delegado')), -- propio: certificado del CUIT · delegado: certificado de DC
+  activo boolean not null default true,
+  nota text,
+  created_at timestamptz not null default now(),
+  primary key (user_id, cuit)
+);
+alter table public.arca_cuits enable row level security;
+create policy "arca_cuits: ver los propios" on public.arca_cuits for select using (auth.uid() = user_id);

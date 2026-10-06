@@ -1,18 +1,20 @@
 // Facturador ARCA · función de Supabase que habla con ARCA (factura electrónica) a través de Afip SDK.
-// Nunca expone el token de Afip SDK ni el certificado al navegador.
+// Nunca expone el token de Afip SDK ni los certificados al navegador.
 //
-// Variables de entorno (Supabase › Edge Functions › Secrets):
-//   AFIPSDK_TOKEN      token de la cuenta de Afip SDK (app.afipsdk.com)
-//   ARCA_ENV           "dev" (homologación, CUIT de prueba) o "prod"
-//   DC_CUIT            CUIT de Digital Carmelo: es quien tiene el certificado y recibe las delegaciones (solo prod)
-//   DC_CERT, DC_KEY    certificado y clave privada de producción de DC, en texto PEM (solo prod)
-//   ARCA_EN_SUITE      "true" si el Facturador ARCA viene incluido en la Suite; por defecto no
-//   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY  (los pone Supabase solo)
+// Secretos: en el Vault de Supabase, leídos con la función public.arca_secreto (solo service_role).
+//   arca_afipsdk_token     token de la cuenta de Afip SDK
+//   arca_entorno           "prod" o "dev" (homologación con el CUIT de prueba de Afip SDK). Si falta: prod
+//   arca_cert_<cuit>, arca_key_<cuit>   certificado propio de un CUIT (factura con su propio certificado)
+//   arca_cert_dc, arca_key_dc, arca_cuit_dc   certificado de Digital Carmelo para CUITs que le delegan el servicio
+// ARCA_EN_SUITE (variable de entorno): "true" si el Facturador ARCA viene incluido en la Suite; por defecto no.
+//
+// Seguridad: un usuario solo puede facturar por un CUIT habilitado para él en public.arca_cuits
+// (esa tabla la carga Digital Carmelo; desde el navegador no se puede escribir).
 //
 // Acciones (POST JSON { action, ... }):
 //   estado       → servidores de ARCA (FEDummy)
 //   condiciones  → condiciones frente al IVA del receptor válidas para Factura C
-//   verificar    → prueba que la delegación y el punto de venta del cliente funcionen
+//   verificar    → prueba que el certificado/delegación y el punto de venta funcionen
 //   emitir       → Factura C (11) o Nota de Crédito C (13): pide el CAE y guarda el comprobante
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -23,7 +25,7 @@ const PRODUCT = "facturador-arca";
 const DEV_CUIT = "20409378472"; // CUIT de prueba de Afip SDK para homologación
 
 const env = (k: string, d = "") => Deno.env.get(k) ?? d;
-const ENV = env("ARCA_ENV", "dev") === "prod" ? "prod" : "dev";
+const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -33,12 +35,29 @@ const cors = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
+// ---------------------------------------------------------------- Secretos (Vault)
+const secretos = new Map<string, { v: string | null; t: number }>();
+async function secreto(nombre: string): Promise<string | null> {
+  const c = secretos.get(nombre);
+  if (c && c.t > Date.now() - 10 * 60_000) return c.v;
+  const { data, error } = await admin.rpc("arca_secreto", { p_nombre: nombre });
+  if (error) throw new Problema("No pudimos leer la configuración de ARCA.", 500, error.message);
+  const v = (data as string | null) || null;
+  secretos.set(nombre, { v, t: Date.now() });
+  return v;
+}
+async function entorno(): Promise<"prod" | "dev"> {
+  return ((await secreto("arca_entorno")) || "prod").trim() === "dev" ? "dev" : "prod";
+}
+
 // ---------------------------------------------------------------- Afip SDK
 async function afip(path: string, body: Record<string, unknown>) {
+  const token = await secreto("arca_afipsdk_token");
+  if (!token) throw new Problema("Falta configurar la cuenta de Afip SDK.", 500);
   const r = await fetch(`${AFIPSDK}/${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${env("AFIPSDK_TOKEN")}` },
-    body: JSON.stringify({ environment: ENV, ...body }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ environment: await entorno(), ...body }),
   });
   const t = await r.text();
   let data: any;
@@ -47,19 +66,38 @@ async function afip(path: string, body: Record<string, unknown>) {
   return data;
 }
 
-let ta: { token: string; sign: string; exp: number } | null = null;
-async function credenciales() {
-  if (ta && ta.exp > Date.now() + 60_000) return ta;
-  const body: Record<string, unknown> = { wsid: "wsfe", tax_id: ENV === "prod" ? env("DC_CUIT") : DEV_CUIT };
-  if (ENV === "prod") { body.cert = env("DC_CERT"); body.key = env("DC_KEY"); }
+// Credenciales (ticket de acceso) por CUIT que firma: el propio o el de DC si el cliente le delegó.
+const tickets = new Map<string, { token: string; sign: string; exp: number }>();
+async function firmante(cuit: string): Promise<{ firma: string; cert?: string; key?: string }> {
+  if ((await entorno()) === "dev") return { firma: DEV_CUIT };
+  const cert = await secreto(`arca_cert_${cuit}`);
+  if (cert) {
+    const key = await secreto(`arca_key_${cuit}`);
+    if (!key) throw new Problema("Falta la clave del certificado de este CUIT.", 500);
+    return { firma: cuit, cert, key };
+  }
+  const dc = await secreto("arca_cuit_dc");
+  const dcCert = await secreto("arca_cert_dc"), dcKey = await secreto("arca_key_dc");
+  if (!dc || !dcCert || !dcKey) throw new Problema("Este CUIT todavía no tiene certificado cargado. Escribinos por WhatsApp.", 400);
+  return { firma: dc.replace(/\D/g, ""), cert: dcCert, key: dcKey };
+}
+async function credenciales(cuit: string) {
+  const f = await firmante(cuit);
+  const t = tickets.get(f.firma);
+  if (t && t.exp > Date.now() + 60_000) return t;
+  const body: Record<string, unknown> = { wsid: "wsfe", tax_id: f.firma };
+  if (f.cert) { body.cert = f.cert; body.key = f.key; }
   const r = await afip("auth", body);
-  ta = { token: r.token, sign: r.sign, exp: Date.parse(r.expiration) || Date.now() + 3600_000 };
-  return ta;
+  const nuevo = { token: r.token, sign: r.sign, exp: Date.parse(r.expiration) || Date.now() + 3600_000 };
+  tickets.set(f.firma, nuevo);
+  return nuevo;
 }
 async function wsfe(method: string, cuit: string, params: Record<string, unknown> = {}) {
-  const c = await credenciales();
-  const auth = { Token: c.token, Sign: c.sign, Cuit: Number(ENV === "prod" ? cuit : DEV_CUIT) };
-  return afip("requests", { method, wsid: "wsfe", params: method === "FEDummy" ? {} : { Auth: auth, ...params } });
+  if (method === "FEDummy") return afip("requests", { method, wsid: "wsfe", params: {} });
+  const dev = (await entorno()) === "dev";
+  const c = await credenciales(cuit);
+  const auth = { Token: c.token, Sign: c.sign, Cuit: Number(dev ? DEV_CUIT : cuit) };
+  return afip("requests", { method, wsid: "wsfe", params: { Auth: auth, ...params } });
 }
 
 function erroresDe(result: any) {
@@ -67,7 +105,7 @@ function erroresDe(result: any) {
 }
 function traducirError(m: unknown): string {
   const s = typeof m === "string" ? m : JSON.stringify(m);
-  if (/600|ValidacionDeToken|no autorizado/i.test(s)) return "ARCA no autoriza a facturar por este CUIT. Revisá que la delegación del servicio de factura electrónica esté hecha y aceptada.";
+  if (/600|ValidacionDeToken|no autorizado/i.test(s)) return "ARCA no autoriza a facturar por este CUIT. Revisá el certificado o la delegación del servicio de factura electrónica.";
   if (/10015|punto de venta/i.test(s)) return "El punto de venta no existe o no es de tipo Web Services. Revisalo en ARCA.";
   return s.length > 300 ? s.slice(0, 300) + "…" : s;
 }
@@ -85,7 +123,6 @@ async function usuario(req: Request) {
   let ok = !!a?.can_access && a.access_state !== "trial_active"; // la prueba gratis no emite facturas reales
   if (ok && a.access_source === "suite" && env("ARCA_EN_SUITE") !== "true") {
     // La Suite no incluye ARCA salvo que se active: tiene que haber un acceso propio al producto
-    const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"));
     const { data: own } = await admin.from("user_product_access").select("plan,status").eq("user_id", u.user.id).eq("product_slug", PRODUCT).maybeSingle();
     ok = !!own && ["full", "legacy_full"].includes(own.plan) && own.status === "active";
   }
@@ -101,25 +138,28 @@ Deno.serve(async (req) => {
     const p = await req.json().catch(() => ({}));
     const action = String(p.action || "");
 
+    const user = await usuario(req); // todo pide sesión: la cuenta de Afip SDK tiene un cupo mensual de pedidos
+    const ENV = await entorno();
+
     if (action === "estado") {
       const r = await wsfe("FEDummy", DEV_CUIT);
       const s = r?.FEDummyResult || {};
       return json({ ok: s.AppServer === "OK" && s.DbServer === "OK" && s.AuthServer === "OK", ambiente: ENV, servidores: s });
     }
-
-    const user = await usuario(req);
-    const admin = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"));
     const { data: cfg } = await admin.from("arca_config").select("*").eq("user_id", user.id).maybeSingle();
-
-    if (action === "condiciones") {
-      const r = await wsfe("FEParamGetCondicionIvaReceptor", cfg?.cuit || DEV_CUIT, { ClaseCmp: "C" });
-      const items = lista(r?.FEParamGetCondicionIvaReceptorResult?.ResultGet?.CondicionIvaReceptor).map((c: any) => ({ id: Number(c.Id), nombre: c.Desc }));
-      return json({ ok: true, condiciones: items });
-    }
-
     if (!cfg?.cuit || !cfg?.pto_vta) throw new Problema("Primero completá tus datos fiscales (CUIT y punto de venta).");
     const cuit = String(cfg.cuit).replace(/\D/g, "");
     const ptoVta = Number(cfg.pto_vta);
+    if (ENV === "prod") {
+      const { data: hab } = await admin.from("arca_cuits").select("cuit").eq("user_id", user.id).eq("cuit", cuit).eq("activo", true).maybeSingle();
+      if (!hab) throw new Problema(`El CUIT ${cuit} todavía no está habilitado en tu cuenta. Escribinos por WhatsApp para activarlo.`, 403);
+    }
+
+    if (action === "condiciones") {
+      const r = await wsfe("FEParamGetCondicionIvaReceptor", cuit, { ClaseCmp: "C" });
+      const items = lista(r?.FEParamGetCondicionIvaReceptorResult?.ResultGet?.CondicionIvaReceptor).map((c: any) => ({ id: Number(c.Id), nombre: c.Desc }));
+      return json({ ok: true, condiciones: items });
+    }
 
     if (action === "verificar") {
       const r = await wsfe("FECompUltimoAutorizado", cuit, { PtoVta: ptoVta, CbteTipo: CBTE.FACTURA_C });
