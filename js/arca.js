@@ -18,6 +18,10 @@
   ];
 
   db.fiscal = db.fiscal || {};
+  // Demo para visitantes: datos de ejemplo y un tope de comprobantes de prueba
+  const VISITA = new URLSearchParams(location.search).has('demo');
+  const MAX_VISITA = 5;
+  if (VISITA && !db.fiscal.cuit) Object.assign(db.fiscal, { cuit: '20123456786', ptoVta: 1, razonSocial: 'Tu Negocio (ejemplo)', domicilio: 'Av. Siempre Viva 123, Buenos Aires', condicion: 'monotributo', categoria: 'A', tope: 10000000 });
   db.comprobantes = db.comprobantes || [];
 
   // ---------------------------------------------------------------- utilidades
@@ -115,6 +119,7 @@
     if (!(total > 0)) throw new Error('El total tiene que ser mayor a cero.');
     let c = { id: 'cb' + Date.now() + Math.random().toString(36).slice(2, 5), cbteTipo, tipo: p.tipo === 'NC' ? 'NC' : 'FC', fecha: p.fecha, concepto: p.concepto, servicio: p.servicio || null, receptor: p.receptor, items, descuento: r2(p.descuento), total, ventaId: p.ventaId || null, asociado: p.asociado || null, cuit: db.fiscal.cuit, ptoVta: +db.fiscal.ptoVta, emisor: { ...db.fiscal } };
     delete c.emisor.condiciones;
+    if (VISITA && db.comprobantes.filter((x) => x.demo).length >= MAX_VISITA) throw new Error(`En la demo podés emitir hasta ${MAX_VISITA} comprobantes de prueba. Para facturar con ARCA tocá "Quiero sumarlo" arriba.`);
     if (DEMO) {
       await new Promise((r) => setTimeout(r, 450));
       c.numero = siguienteDemo(cbteTipo);

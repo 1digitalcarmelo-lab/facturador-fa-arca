@@ -4,7 +4,7 @@
    cuitRepresentante: el CUIT de Digital Carmelo, para quienes le delegan la factura electrónica (si factura con
    certificado propio no hace falta). */
 window.ARCA_CONFIG = {
-  modo: 'nube',
+  modo: new URLSearchParams(location.search).has('demo') ? 'demo' : 'nube', // ?demo = muestra sin validez fiscal
   supabaseUrl: 'https://rkkulnehklzqqmffvaqz.supabase.co',
   supabaseKey: 'sb_publishable_tKfKztMCb7iwDEIUdrgszA_qzPSPLZo',
   funcion: 'arca',

@@ -192,7 +192,9 @@ footer .suite-legal{color:#98a2b3}</style>
 </div>
 <div class="modal-backdrop" id="modal"><div class="modal" id="modal-content"></div></div><div class="toast" id="toast"></div>
 <script>
-  const KEY='mini-facturador-v1';
+  // ?demo = versión de muestra para quien no tiene el Facturador ARCA: datos aparte, solo en este navegador
+  const DEMO_VISITA=new URLSearchParams(location.search).has('demo');
+  const KEY=DEMO_VISITA?'facturador-arca-demo':'mini-facturador-v1';
   const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(n)||0);
   const dateText = d => new Date(d).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'});
   let db = JSON.parse(localStorage.getItem(KEY)||'null') || {settings:{name:'Mi negocio',phone:'',email:'',address:'',tax:'',footer:'Gracias por tu compra.'}, products:[{id:'p1',name:'Remera estampada',description:'Estampa personalizada',price:18500,sku:'REM-001'},{id:'p2',name:'Taza personalizada',description:'Taza cerámica',price:9500,sku:'TAZ-001'},{id:'p3',name:'Diseño personalizado',description:'Servicio de diseño',price:12000,sku:'SRV-001'}],clients:[{id:'c1',name:'María González',phone:'11 4567 8901',email:'maria@email.com',tax:'',notes:''},{id:'c2',name:'Juan Pérez',phone:'11 2233 4455',email:'',tax:'',notes:''}],sales:[],nextNumber:1,logo:''};

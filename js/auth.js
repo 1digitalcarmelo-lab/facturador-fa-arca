@@ -682,6 +682,13 @@ function renderLogin(
 
         <a
           class="dc-auth-link"
+          href="${DEMO_URL}"
+        >
+          Ver la demo sin cuenta →
+        </a>
+
+        <a
+          class="dc-auth-link"
           href="${SUITE_URL}"
         >
           ← Volver a la Suite
@@ -858,8 +865,44 @@ function renderLocked(
    VERIFICAR ACCESO
 ========================================================= */
 
+/* =========================================================
+   DEMO (?demo): la app se puede ver y probar sin validez fiscal
+========================================================= */
+
+const DEMO_URL = location.pathname + "?demo=1";
+const EN_DEMO = new URLSearchParams(location.search).has("demo");
+
+function openDemo() {
+  document.body.classList.remove("dc-auth-pending");
+  if (root) { root.innerHTML = ""; root.style.display = "none"; }
+  if (document.getElementById("dc-demo-bar")) return;
+  const bar = document.createElement("div");
+  bar.id = "dc-demo-bar";
+  bar.innerHTML = `
+    <span><b>Demo del Facturador ARCA</b> · Probalo libremente: las facturas salen sin validez fiscal.</span>
+    <span class="dc-demo-actions">
+      <a href="${WHATSAPP_URL}" target="_blank" rel="noopener noreferrer" class="dc-demo-cta">Quiero sumarlo</a>
+      <a href="${location.pathname}" class="dc-demo-login">Ingresar</a>
+    </span>`;
+  const st = document.createElement("style");
+  st.textContent = `
+    #dc-demo-bar{position:sticky;top:0;z-index:9999;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:center;
+      padding:10px 16px;background:#14122b;color:#fff;font:14px/1.35 system-ui,sans-serif;text-align:center;border-bottom:2px solid #d8b45a}
+    #dc-demo-bar .dc-demo-actions{display:flex;gap:10px;align-items:center}
+    #dc-demo-bar .dc-demo-cta{background:linear-gradient(135deg,#f1d27a,#c9a24a);color:#1a1530;font-weight:800;padding:7px 14px;border-radius:999px;text-decoration:none}
+    #dc-demo-bar .dc-demo-login{color:#f1d27a;text-decoration:underline}
+    @media print{#dc-demo-bar{display:none}}`;
+  document.head.appendChild(st);
+  document.body.prepend(bar);
+}
+
 async function checkAccess() {
   injectStyles();
+
+  if (EN_DEMO) {
+    openDemo();
+    return;
+  }
 
   const {
     data: { session },
@@ -921,9 +964,8 @@ async function checkAccess() {
     return;
   }
 
-  renderLocked(
-    session.user.email || ""
-  );
+  // Sin el Facturador ARCA activo: ve la demo (con el botón para pedirlo por WhatsApp)
+  location.replace(DEMO_URL);
 }
 
 checkAccess();
