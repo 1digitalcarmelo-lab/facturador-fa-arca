@@ -775,7 +775,7 @@ function renderLocked(
         </p>
 
         <div class="dc-product-chip">
-          FACTURADOR DIGITAL CARMELO
+          FACTURADOR ARCA · DIGITAL CARMELO
         </div>
 
         <h1 class="dc-auth-title">
