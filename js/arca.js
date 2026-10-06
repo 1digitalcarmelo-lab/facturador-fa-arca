@@ -20,7 +20,6 @@
   db.fiscal = db.fiscal || {};
   // Demo para visitantes: datos de ejemplo y un tope de comprobantes de prueba
   const VISITA = new URLSearchParams(location.search).has('demo');
-  const MAX_VISITA = 5;
   if (VISITA && !db.fiscal.cuit) Object.assign(db.fiscal, { cuit: '20123456786', ptoVta: 1, razonSocial: 'Tu Negocio (ejemplo)', domicilio: 'Av. Siempre Viva 123, Buenos Aires', condicion: 'monotributo', categoria: 'A', tope: 10000000 });
   db.comprobantes = db.comprobantes || [];
 
@@ -87,7 +86,7 @@
       const { data: u } = await s.auth.getUser();
       if (!u || !u.user) return;
       const { data: c } = await s.from('arca_config').select('*').eq('user_id', u.user.id).maybeSingle();
-      if (c && !db.fiscal.cuit) {
+      if (c) {
         Object.assign(db.fiscal, { cuit: c.cuit, ptoVta: c.pto_vta, razonSocial: c.razon_social, domicilio: c.domicilio, iibb: c.iibb || '', inicio: c.inicio_actividades || '', condicion: c.condicion, categoria: c.categoria || '', tope: c.tope_anual || '' });
         save();
       }
@@ -119,7 +118,6 @@
     if (!(total > 0)) throw new Error('El total tiene que ser mayor a cero.');
     let c = { id: 'cb' + Date.now() + Math.random().toString(36).slice(2, 5), cbteTipo, tipo: p.tipo === 'NC' ? 'NC' : 'FC', fecha: p.fecha, concepto: p.concepto, servicio: p.servicio || null, receptor: p.receptor, items, descuento: r2(p.descuento), total, ventaId: p.ventaId || null, asociado: p.asociado || null, cuit: db.fiscal.cuit, ptoVta: +db.fiscal.ptoVta, emisor: { ...db.fiscal } };
     delete c.emisor.condiciones;
-    if (VISITA && db.comprobantes.filter((x) => x.demo).length >= MAX_VISITA) throw new Error(`En la demo podés emitir hasta ${MAX_VISITA} comprobantes de prueba. Para facturar con ARCA tocá "Quiero sumarlo" arriba.`);
     if (DEMO) {
       await new Promise((r) => setTimeout(r, 450));
       c.numero = siguienteDemo(cbteTipo);
@@ -142,7 +140,8 @@
 
   // ---------------------------------------------------------------- vista ARCA
   function etiquetaModo() {
-    return DEMO ? '<span class="badge partial">● Modo demostración · sin validez fiscal</span>' : '<span class="badge paid">● Conectado a ARCA</span>';
+    if (DEMO) return '<span class="badge partial">● Modo demostración · sin validez fiscal</span>';
+    return configurado() ? '<span class="badge paid">● Conectado a ARCA</span>' : '<span class="badge pending">● Conexión en preparación</span>';
   }
   function renderArca() {
     const v = document.getElementById('arca-view');
@@ -154,7 +153,7 @@
          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><button class="btn secondary small" id="arca-verif">↻ Verificar conexión con ARCA</button><span class="muted" id="arca-verif-msg">${f.verificado ? 'Última verificación: ' + esc(f.verificado) : ''}</span></div>
          ${topeHtml()}
          ${DEMO ? '<p class="notice" style="margin-top:14px">Estás en <strong>modo demostración</strong>: los comprobantes llevan un CAE de prueba y la leyenda "SIN VALIDEZ FISCAL". Sirve para mostrar la app y practicar. Cuando tu cuenta esté conectada a ARCA, las facturas salen con CAE real.</p>' : ''}`
-      : `<div class="card-head"><div><h3>Conectá tu CUIT para empezar a facturar</h3><div class="muted">Son 3 pasos, una sola vez.</div></div>${etiquetaModo()}</div>${guiaHtml()}<button class="btn primary" style="margin-top:14px" onclick="arcaDatos()">Cargar mis datos fiscales</button>`}</div>
+      : `<div class="card-head"><div><h3>Estamos preparando tu conexión con ARCA</h3><div class="muted">Tus datos fiscales los cargamos nosotros. Cuando esté lista, vas a ver acá tu CUIT y tu punto de venta.</div></div>${etiquetaModo()}</div><a class="btn primary" style="margin-top:6px;text-decoration:none" href="${waAyuda()}" target="_blank" rel="noopener noreferrer">Escribirnos por WhatsApp</a>`}</div>
     <div class="card"><div class="card-head"><div><h3>Comprobantes emitidos</h3><div class="muted">${lista.length} comprobante${lista.length === 1 ? '' : 's'}</div></div></div>
     ${lista.length ? `<div class="table-wrap"><table><thead><tr><th>Comprobante</th><th>Cliente</th><th>Total</th><th>CAE</th><th></th></tr></thead><tbody>${lista.map((c) => `<tr><td><strong>${NOMBRE_TIPO[c.cbteTipo]} ${pad(c.ptoVta, 5)}-${pad(c.numero, 8)}</strong><br><span class="muted">${fechaAR(c.fecha)}${c.demo ? ' · prueba' : ''}</span></td><td>${esc(c.receptor.nombre || 'Consumidor final')}${c.anuladaPor ? '<br><span class="badge pending">Anulada con NC</span>' : ''}</td><td><strong>${money(c.tipo === 'NC' ? -c.total : c.total)}</strong></td><td><span class="code-chip">${esc(c.cae)}</span></td><td><button class="btn ghost" onclick="arcaVer('${c.id}')">Ver</button></td></tr>`).join('')}</tbody></table></div>`
       : '<div class="empty">Todavía no emitiste comprobantes. Abrí una venta y tocá <strong>Emitir Factura C</strong>.</div>'}</div>`;
@@ -180,38 +179,24 @@
   }
 
   // ---------------------------------------------------------------- datos fiscales
+  function waAyuda(texto) {
+    return 'https://wa.me/' + (CFG.whatsapp || '5491176508119') + '?text=' + encodeURIComponent(texto || 'Hola Digital Carmelo 👋 Tengo una consulta sobre mi Facturador ARCA.');
+  }
   window.arcaDatos = function () {
     const f = db.fiscal;
-    const s = db.settings || {};
+    const fila = (k, v) => `<div class="field"><label>${k}</label><div style="padding:10px 12px;border:1px solid var(--line,#e6e3ef);border-radius:12px;background:rgba(0,0,0,.02)">${v ? esc(String(v)) : '<span class="muted">—</span>'}</div></div>`;
     document.getElementById('modal-content').innerHTML = `<div class="modal-head"><h3>Datos fiscales</h3><button class="btn ghost" onclick="closeModal()">×</button></div>
-      <p class="muted" style="margin-top:-6px">Salen impresos en cada factura tal cual los cargues, igual que en tu constancia de ARCA.</p>
+      <p class="muted" style="margin-top:-6px">Así salen impresos en cada factura. Los cargamos nosotros al conectar tu CUIT con ARCA.</p>
       <div class="form-grid">
-        <div class="field"><label>CUIT</label><input id="af-cuit" inputmode="numeric" placeholder="20-12345678-3" value="${esc(cuitFmt(f.cuit || ''))}"></div>
-        <div class="field"><label>Punto de venta (Web Services)</label><input id="af-pv" type="number" min="1" max="99998" placeholder="3" value="${esc(f.ptoVta || '')}"></div>
-        <div class="field full"><label>Razón social / Nombre y apellido</label><input id="af-rs" value="${esc(f.razonSocial || '')}" placeholder="Como figura en ARCA"></div>
-        <div class="field full"><label>Domicilio comercial</label><input id="af-dom" value="${esc(f.domicilio || s.address || '')}" placeholder="Calle, número, localidad"></div>
-        <div class="field"><label>Ingresos Brutos (opcional)</label><input id="af-iibb" value="${esc(f.iibb || '')}" placeholder="Número o Exento"></div>
-        <div class="field"><label>Inicio de actividades</label><input id="af-ini" type="date" value="${esc(f.inicio || '')}"></div>
-        <div class="field full"><label>Condición frente al IVA</label><select id="af-cond"><option value="monotributo"${f.condicion !== 'social' ? ' selected' : ''}>Responsable Monotributo</option><option value="social"${f.condicion === 'social' ? ' selected' : ''}>Monotributista Social</option></select><small class="muted">Esta versión emite Factura C. Facturas A y B: próximamente.</small></div>
-        <div class="field"><label>Categoría (opcional)</label><input id="af-cat" maxlength="2" placeholder="A" value="${esc(f.categoria || '')}"></div>
-        <div class="field"><label>Tope anual de tu categoría (opcional)</label><input id="af-tope" type="number" min="0" step="1" placeholder="Ingresos brutos máximos" value="${esc(f.tope || '')}"><small class="muted">Lo ves en la tabla de categorías de ARCA. Sirve para avisarte si te acercás.</small></div>
+        ${fila('CUIT', cuitFmt(f.cuit || ''))}${fila('Punto de venta', f.ptoVta ? pad(f.ptoVta, 5) : '')}
+        <div class="field full">${fila('Razón social', f.razonSocial).replace(/^<div class="field">|<\/div>$/g, '')}</div>
+        <div class="field full">${fila('Domicilio comercial', f.domicilio).replace(/^<div class="field">|<\/div>$/g, '')}</div>
+        ${fila('Ingresos Brutos', f.iibb)}${fila('Inicio de actividades', fechaAR(f.inicio || ''))}
+        ${fila('Condición frente al IVA', COND[f.condicion] || COND.monotributo)}${fila('Categoría', f.categoria)}
       </div>
-      <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">¿Cómo conecto mi CUIT con ARCA? (3 pasos)</summary>${guiaHtml()}</details>
-      <p class="muted" id="af-msg" style="margin:10px 0 0"></p>
-      <div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Cancelar</button><button class="btn primary" id="af-ok">Guardar</button></div>`;
+      <p class="muted" style="margin:12px 0 0">¿Cambió algo (domicilio, categoría, punto de venta)? Escribinos y lo actualizamos.</p>
+      <div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Cerrar</button><a class="btn primary" style="text-decoration:none" target="_blank" rel="noopener noreferrer" href="${waAyuda('Hola Digital Carmelo 👋 Necesito actualizar mis datos fiscales del Facturador ARCA.')}">Pedir un cambio</a></div>`;
     document.getElementById('modal').classList.add('show');
-    document.getElementById('af-ok').onclick = async () => {
-      const cuit = soloNum(document.getElementById('af-cuit').value), msg = document.getElementById('af-msg');
-      const pv = parseInt(document.getElementById('af-pv').value, 10);
-      const rs = document.getElementById('af-rs').value.trim(), dom = document.getElementById('af-dom').value.trim();
-      if (!cuitValido(cuit)) { msg.textContent = '⚠ Revisá el CUIT: tiene que tener 11 números y el último tiene que coincidir.'; return; }
-      if (!(pv >= 1 && pv <= 99998)) { msg.textContent = '⚠ Poné el número del punto de venta que creaste en ARCA.'; return; }
-      if (!rs || !dom) { msg.textContent = '⚠ Completá razón social y domicilio comercial.'; return; }
-      Object.assign(db.fiscal, { cuit, ptoVta: pv, razonSocial: rs, domicilio: dom, iibb: document.getElementById('af-iibb').value.trim(), inicio: document.getElementById('af-ini').value, condicion: document.getElementById('af-cond').value, categoria: document.getElementById('af-cat').value.trim().toUpperCase(), tope: +document.getElementById('af-tope').value || '' });
-      save();
-      if (!DEMO) { try { msg.textContent = 'Guardando…'; await guardarConfigNube(); } catch (e) { msg.textContent = '⚠ ' + e.message; return; } }
-      closeModal(); renderArca(); toast('Datos fiscales guardados.');
-    };
   };
 
   // ---------------------------------------------------------------- formulario de factura
@@ -409,6 +394,36 @@
     sincronizar();
     if (!DEMO && !db.fiscal.condiciones) llamar('condiciones').then((r) => { if (r.condiciones && r.condiciones.length) { db.fiscal.condiciones = r.condiciones; save(); } }).catch(() => {});
   })();
+
+  // ---------------------------------------------------------------- demo para visitantes: solo mirar
+  // Se ven facturas de ejemplo; cualquier otra acción invita a pedir el acceso por WhatsApp.
+  if (VISITA) {
+    const WA = 'https://wa.me/' + (CFG.whatsapp || '5491176508119') + '?text=' + encodeURIComponent('Hola Digital Carmelo 👋 Estoy viendo el Facturador ARCA de Digital Carmelo y quiero saber cómo puedo incorporarlo a mi cuenta.');
+    const pedirAcceso = function () {
+      document.getElementById('modal-content').innerHTML = `<div class="modal-head"><h3>🧾 Facturador ARCA</h3><button class="btn ghost" onclick="closeModal()">×</button></div>
+        <p>Estás viendo la <strong>demo</strong>. Para emitir tus facturas con CAE, cargar tus datos fiscales y usar todas las funciones, pedinos el acceso: te ayudamos a conectar tu CUIT con ARCA.</p>
+        <div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Seguir mirando</button><a class="btn primary" href="${WA}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">Quiero sumarlo</a></div>`;
+      document.getElementById('modal').classList.add('show');
+    };
+    window.arcaPedirAcceso = pedirAcceso;
+    // Comprobantes de ejemplo (solo en este navegador, sin validez fiscal)
+    if (!db.comprobantes.length) {
+      const f = hoy(), em = { ...db.fiscal };
+      const ej = (n, nombre, items, concepto) => {
+        const total = r2(items.reduce((a, i) => a + i.cantidad * i.precio, 0));
+        const c = { id: 'ej' + n, cbteTipo: TIPO.FC, tipo: 'FC', fecha: f, concepto, servicio: concepto === 2 ? { desde: f, hasta: f, vencimiento: f } : null, receptor: { docTipo: 99, docNro: '', nombre, condicionIva: 5, domicilio: '' }, items, descuento: 0, total, cuit: em.cuit, ptoVta: em.ptoVta, emisor: em, numero: n, cae: '7' + String(4123456789012 + n), caeVto: masDias(f, 10), demo: true };
+        c.qr = urlQR(c); return c;
+      };
+      db.comprobantes.push(ej(1, 'María González', [{ descripcion: 'Cobertura fotográfica de evento', cantidad: 1, precio: 180000 }], 2),
+        ej(2, 'Consumidor final', [{ descripcion: 'Cuadro 30x40', cantidad: 2, precio: 25000 }, { descripcion: 'Revelado 10x15', cantidad: 20, precio: 600 }], 1));
+      save();
+    }
+    window.arcaDatos = pedirAcceso; window.arcaNueva = pedirAcceso; window.arcaFacturarVenta = pedirAcceso; window.arcaAnular = pedirAcceso;
+    const _sv = showView;
+    showView = function (v) { if (v === 'arca' || v === 'arca-doc') return _sv(v); pedirAcceso(); };
+    document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#arca-verif')) { e.stopImmediatePropagation(); pedirAcceso(); } }, true);
+    setTimeout(() => _sv('arca'), 0);
+  }
 
   window.__arca = { urlQR, cuitValido, emitir, comprobanteHtml, DEMO };
 })();

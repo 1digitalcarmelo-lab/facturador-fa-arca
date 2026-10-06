@@ -879,7 +879,7 @@ function openDemo() {
   const bar = document.createElement("div");
   bar.id = "dc-demo-bar";
   bar.innerHTML = `
-    <span><b>Demo del Facturador ARCA</b> · Probalo libremente: las facturas salen sin validez fiscal.</span>
+    <span><b>Demo del Facturador ARCA</b> · Mirá cómo funciona. Para facturar con tus datos, pedinos el acceso.</span>
     <span class="dc-demo-actions">
       <a href="${WHATSAPP_URL}" target="_blank" rel="noopener noreferrer" class="dc-demo-cta">Quiero sumarlo</a>
       <a href="${location.pathname}" class="dc-demo-login">Ingresar</a>
@@ -949,9 +949,7 @@ async function checkAccess() {
   const allowed =
     access?.can_access === true &&
     [
-      "product_full",
-      "suite_full",
-      "trial_active",
+      "product_full", // el Facturador ARCA se activa a mano: la Suite sola o una prueba van a la demo
     ].includes(
       access?.access_state
     );
