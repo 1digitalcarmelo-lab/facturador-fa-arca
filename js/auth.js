@@ -192,7 +192,41 @@ function injectStyles() {
       box-shadow:
         0 0 0 3px rgba(212,162,76,.12);
     }
+.dc-password-wrap {
+  position: relative;
+}
 
+.dc-password-wrap .dc-auth-input {
+  padding-right: 54px;
+}
+
+.dc-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #bfc2d5;
+  cursor: pointer;
+}
+
+.dc-password-toggle:hover {
+  color: #f2d188;
+  background: rgba(255,255,255,.05);
+}
+
+.dc-password-toggle svg {
+  width: 21px;
+  height: 21px;
+  pointer-events: none;
+}
     .dc-auth-button {
       width: 100%;
       min-height: 52px;
@@ -652,13 +686,38 @@ function renderLogin(
             Contraseña
           </label>
 
-          <input
-            class="dc-auth-input"
-            id="dc-auth-password"
-            type="password"
-            autocomplete="current-password"
-            required
-          >
+         <div class="dc-password-wrap">
+
+  <input
+    class="dc-auth-input"
+    id="dc-auth-password"
+    type="password"
+    autocomplete="current-password"
+    required
+  >
+
+  <button
+    type="button"
+    class="dc-password-toggle"
+    id="dc-password-toggle"
+    aria-label="Mostrar contraseña"
+    title="Mostrar contraseña"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  </button>
+
+</div>
 
           <button
             class="dc-auth-button"
@@ -697,7 +756,44 @@ function renderLogin(
       </div>
     </div>
   `;
+const passwordInput =
+  document.getElementById(
+    "dc-auth-password"
+  );
 
+const passwordToggle =
+  document.getElementById(
+    "dc-password-toggle"
+  );
+
+passwordToggle?.addEventListener(
+  "click",
+  () => {
+    if (!passwordInput) return;
+
+    const isVisible =
+      passwordInput.type === "text";
+
+    passwordInput.type =
+      isVisible
+        ? "password"
+        : "text";
+
+    passwordToggle.setAttribute(
+      "aria-label",
+      isVisible
+        ? "Mostrar contraseña"
+        : "Ocultar contraseña"
+    );
+
+    passwordToggle.setAttribute(
+      "title",
+      isVisible
+        ? "Mostrar contraseña"
+        : "Ocultar contraseña"
+    );
+  }
+);
   const form =
     document.getElementById(
       "dc-auth-form"
