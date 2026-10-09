@@ -253,42 +253,6 @@ footer .suite-legal{color:#98a2b3}</style>
 <script src="js/vendor/qrcode.js"></script>
 <script src="js/arca-config.js"></script>
 <script src="js/arca.js"></script>
-<div class="suite-promo" role="complementary" aria-label="Suite Potenciadora">
-<button class="suite-promo__close" type="button" aria-label="Cerrar promoción">×</button>
-<p class="suite-promo__eyebrow">SUITE POTENCIADORA</p>
-<p class="suite-promo__text">¿Todavía no conocés las herramientas para hacer crecer tu negocio?</p>
-<a class="suite-promo__cta" href="https://wa.me/5491176508119?text=Hola%2C%20quiero%20conocer%20la%20Suite%20Potenciadora%20de%20Digital%20Carmelo" target="_blank" rel="noopener">Conocé la suite por WhatsApp</a>
-</div>
-<script>
-(function(){
-  var messages=[
-    '¿Todavía no conocés las herramientas para hacer crecer tu negocio?',
-    'Potenciar tu negocio es más fácil con las herramientas adecuadas.',
-    'No es hacer más. Es crecer distinto.',
-    'Descubrí todo lo que podés crear con la Suite Potenciadora.'
-  ];
-  var box=document.querySelector('.suite-promo');
-  if(!box)return;
-  var text=box.querySelector('.suite-promo__text');
-  var close=box.querySelector('.suite-promo__close');
-  var index=0;
-  var timer;
-  function rotate(){
-    box.classList.add('is-hiding');
-    setTimeout(function(){
-      index=(index+1)%messages.length;
-      text.textContent=messages[index];
-      box.classList.remove('is-hiding');
-    },350);
-  }
-  timer=setInterval(rotate,9000);
-  close.addEventListener('click',function(){
-    clearInterval(timer);
-    box.classList.add('is-hiding');
-    setTimeout(function(){box.remove()},350);
-  });
-})();
-</script>
 
 <style>
 /* Ajustes de marca: el protagonista es el negocio del cliente; Digital Carmelo queda como firma discreta */
