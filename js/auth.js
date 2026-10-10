@@ -975,21 +975,54 @@ function openDemo() {
   const bar = document.createElement("div");
   bar.id = "dc-demo-bar";
   bar.innerHTML = `
-    <span><b>Demo del Facturador ARCA</b> · Mirá cómo funciona. Para facturar con tus datos, pedinos el acceso.</span>
+    <span><b>Demo del Facturador ARCA</b><span class="dc-demo-long"> · Mirá cómo funciona. Para facturar con tus datos, pedinos el acceso.</span></span>
     <span class="dc-demo-actions">
       <a href="${WHATSAPP_URL}" target="_blank" rel="noopener noreferrer" class="dc-demo-cta">Quiero sumarlo</a>
-      <a href="${location.pathname}" class="dc-demo-login">Ingresar</a>
+      <a href="${location.pathname}" class="dc-demo-login" data-demo-login>Ingresar</a>
     </span>`;
   const st = document.createElement("style");
+  // La barra va fija debajo de la franja de Digital Carmelo y empuja todo (menú lateral incluido),
+  // así no tapa nada.
   st.textContent = `
-    #dc-demo-bar{position:sticky;top:0;z-index:9999;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:center;
-      padding:10px 16px;background:#14122b;color:#fff;font:14px/1.35 system-ui,sans-serif;text-align:center;border-bottom:2px solid #d8b45a}
-    #dc-demo-bar .dc-demo-actions{display:flex;gap:10px;align-items:center}
-    #dc-demo-bar .dc-demo-cta{background:linear-gradient(135deg,#f1d27a,#c9a24a);color:#1a1530;font-weight:800;padding:7px 14px;border-radius:999px;text-decoration:none}
-    #dc-demo-bar .dc-demo-login{color:#f1d27a;text-decoration:underline}
+    #dc-demo-bar{position:fixed;top:30px;left:0;right:0;z-index:7;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:center;
+      padding:8px 16px;background:#14122b;color:#fff;font:13.5px/1.35 system-ui,sans-serif;text-align:center;border-bottom:2px solid #d8b45a}
+    #dc-demo-bar .dc-demo-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+    #dc-demo-bar .dc-demo-cta{background:linear-gradient(135deg,#f1d27a,#c9a24a);color:#1a1530;font-weight:800;padding:6px 14px;border-radius:999px;text-decoration:none}
+    #dc-demo-bar .dc-demo-login{color:#f1d27a;text-decoration:underline;background:none;border:0;font:inherit;cursor:pointer;padding:0}
+    #dc-demo-bar .dc-demo-who{color:rgba(255,255,255,.65);font-size:12.5px}
+    .dc-strip{height:30px!important}
+    @media(max-width:680px){#dc-demo-bar{font-size:12px;padding:6px 10px;gap:4px 10px}#dc-demo-bar .dc-demo-long,#dc-demo-bar .dc-demo-who{display:none}#dc-demo-bar .dc-demo-cta{padding:4px 10px}}
     @media print{#dc-demo-bar{display:none}}`;
   document.head.appendChild(st);
   document.body.prepend(bar);
+  const fit = () => document.documentElement.style.setProperty("--strip", `${30 + bar.offsetHeight}px`);
+  fit();
+  window.addEventListener("resize", fit);
+
+  // Si entró con una cuenta que no tiene el Facturador: mostrar con qué mail y dejar cerrar sesión
+  // (si no, "Ingresar" lo vuelve a traer acá y no puede salir).
+  supabase.auth.getSession().then(({ data }) => {
+    const email = data?.session?.user?.email;
+    if (!email) return;
+    const actions = bar.querySelector(".dc-demo-actions");
+    const login = bar.querySelector("[data-demo-login]");
+    const who = document.createElement("span");
+    who.className = "dc-demo-who";
+    who.textContent = `Entraste como ${email}`;
+    const out = document.createElement("button");
+    out.type = "button";
+    out.className = "dc-demo-login";
+    out.textContent = "Cerrar sesión / usar otra cuenta";
+    out.addEventListener("click", async () => {
+      out.disabled = true;
+      out.textContent = "Cerrando…";
+      try { await supabase.auth.signOut(); } catch (e) { /* igual se sale */ }
+      location.href = location.pathname;
+    });
+    login?.remove();
+    actions.append(who, out);
+    fit();
+  }).catch(() => {});
 }
 
 async function checkAccess() {
